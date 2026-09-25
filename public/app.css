@@ -1847,3 +1847,55 @@ textarea:focus-visible {
     font-size: 27px;
   }
 }
+
+/* v1.6 inline metric pills */
+.metrics-inline {
+  margin: 10px 0 34px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 16px;
+  background: #eef5ff;
+  border: 1px solid #d3e4fb;
+  border-radius: 999px;
+  box-shadow: 0 1px 0 rgba(17, 35, 63, .03);
+  white-space: nowrap;
+}
+
+.metric-pill span {
+  color: #56749a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.metric-pill strong {
+  color: var(--navy);
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .metrics-inline {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .metrics-inline::-webkit-scrollbar {
+    display: none;
+  }
+
+  .metric-pill {
+    flex: 0 0 auto;
+  }
+}

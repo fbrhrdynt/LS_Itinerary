@@ -11,23 +11,11 @@
     </div>
   </section>
 
-  <section class="dashboard-strip compact-metrics" aria-label="Ringkasan perjalanan">
-    <article class="metric-card metric-total">
-      <span>Total trip</span>
-      <strong><%= stats.total %></strong>
-    </article>
-    <article class="metric-card">
-      <span>Akan datang</span>
-      <strong><%= stats.upcoming %></strong>
-    </article>
-    <article class="metric-card">
-      <span>Sedang berjalan</span>
-      <strong><%= stats.ongoing %></strong>
-    </article>
-    <article class="metric-card">
-      <span>Trip grup</span>
-      <strong><%= stats.group %></strong>
-    </article>
+  <section class="metrics-inline" aria-label="Ringkasan perjalanan">
+    <div class="metric-pill"><span>Total trip</span><strong><%= stats.total %></strong></div>
+    <div class="metric-pill"><span>Akan datang</span><strong><%= stats.upcoming %></strong></div>
+    <div class="metric-pill"><span>Sedang berjalan</span><strong><%= stats.ongoing %></strong></div>
+    <div class="metric-pill"><span>Trip grup</span><strong><%= stats.group %></strong></div>
   </section>
 
   <% if (!trips.length) { %>
