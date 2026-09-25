@@ -1,21 +1,41 @@
 <%- include('../partials/head') %>
-<main class="auth-shell">
-  <section class="auth-visual">
-    <div class="auth-brand wordmark-auth"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></div>
-    <div class="auth-copy"><p class="context-label inverse">Siap jalan?</p><h1>Trip, budget, dan itinerary. Semua jadi satu.</h1><p>Simpan semua detail perjalanan tanpa ribet pindah-pindah catatan.</p></div>
-    <div class="auth-points" aria-label="Fitur utama"><div><strong>Trip</strong><span>Buat solo trip atau grup.</span></div><div><strong>Itinerary</strong><span>Atur agenda harian dengan cepat.</span></div><div><strong>Budget</strong><span>Lihat biaya per orang dengan jelas.</span></div></div>
-  </section>
-  <section class="auth-panel">
-    <div class="auth-card">
-      <h2>Masuk</h2><p class="muted">Lanjutkan trip yang sedang Anda atur.</p>
+<main class="auth-page auth-page-centered">
+  <div class="auth-centered-shell">
+    <header class="auth-centered-brand">
+      <a class="brand wordmark" href="/login" aria-label="Itinerary by Febro Herdyanto">
+        <span class="wordmark-title">Itinerary</span>
+        <small>by Febro Herdyanto</small>
+      </a>
+    </header>
+
+    <section class="auth-centered-hero">
+      <p class="auth-kicker">Siap jalan?</p>
+      <h1>Trip lebih rapi.<br><span>Budget lebih jelas.</span></h1>
+      <p class="auth-lead">Satu tempat untuk itinerary, peserta, booking, dan biaya perjalanan.</p>
+
+      <div class="auth-feature-row" aria-label="Fitur utama">
+        <span>Itinerary</span>
+        <span>Split bill</span>
+        <span>Budget</span>
+      </div>
+    </section>
+
+    <section class="auth-card auth-card-centered" aria-labelledby="login-title">
+      <div class="auth-card-head">
+        <h2 id="login-title">Masuk</h2>
+        <p class="muted">Lanjutkan trip yang sedang Anda atur.</p>
+      </div>
+
       <%- include('../partials/flash') %>
+
       <form action="/login" method="post" class="form-stack">
         <label>Email<input type="email" name="email" autocomplete="email" required placeholder="nama@email.com"></label>
         <label>Password<input type="password" name="password" autocomplete="current-password" required placeholder="••••••••"></label>
         <button class="btn btn-primary btn-block" type="submit">Masuk</button>
       </form>
+
       <p class="auth-switch">Belum punya akun? <a href="/register">Buat akun</a></p>
-    </div>
-  </section>
+    </section>
+  </div>
 </main>
 <%- include('../partials/footer') %>
