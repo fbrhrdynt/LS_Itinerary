@@ -1,0 +1,4 @@
+<%- include('partials/head') %>
+<% if (currentUser) { %><%- include('partials/nav') %><% } %>
+<main class="container narrow page-space"><section class="empty-state"><div class="error-code"><%= status %></div><h1><%= title %></h1><p><%= message %></p><a class="btn btn-primary" href="<%= currentUser ? '/dashboard' : '/login' %>">Kembali</a></section></main>
+<%- include('partials/footer') %>

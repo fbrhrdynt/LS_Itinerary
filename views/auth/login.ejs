@@ -1,0 +1,21 @@
+<%- include('../partials/head') %>
+<main class="auth-shell">
+  <section class="auth-visual">
+    <div class="auth-brand wordmark-auth"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></div>
+    <div class="auth-copy"><p class="context-label inverse">Siap jalan?</p><h1>Trip, budget, dan itinerary. Semua jadi satu.</h1><p>Simpan semua detail perjalanan tanpa ribet pindah-pindah catatan.</p></div>
+    <div class="auth-points" aria-label="Fitur utama"><div><strong>Trip</strong><span>Buat solo trip atau grup.</span></div><div><strong>Itinerary</strong><span>Atur agenda harian dengan cepat.</span></div><div><strong>Budget</strong><span>Lihat biaya per orang dengan jelas.</span></div></div>
+  </section>
+  <section class="auth-panel">
+    <div class="auth-card">
+      <h2>Masuk</h2><p class="muted">Lanjutkan trip yang sedang Anda atur.</p>
+      <%- include('../partials/flash') %>
+      <form action="/login" method="post" class="form-stack">
+        <label>Email<input type="email" name="email" autocomplete="email" required placeholder="nama@email.com"></label>
+        <label>Password<input type="password" name="password" autocomplete="current-password" required placeholder="••••••••"></label>
+        <button class="btn btn-primary btn-block" type="submit">Masuk</button>
+      </form>
+      <p class="auth-switch">Belum punya akun? <a href="/register">Buat akun</a></p>
+    </div>
+  </section>
+</main>
+<%- include('../partials/footer') %>

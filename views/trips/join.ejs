@@ -1,0 +1,9 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<main class="container narrow page-space">
+  <section class="join-card panel"><div class="join-icon">✈</div><h1><%= trip.name %></h1><p class="join-destination">⌖ <%= trip.destination %></p><p class="muted"><%= dateLabel(trip.start_date) %> s.d. <%= dateLabel(trip.end_date) %></p>
+    <% if (alreadyJoined) { %><p class="notice success">Anda sudah menjadi peserta trip ini.</p><a class="btn btn-primary btn-block" href="/trips/<%= trip.id %>">Buka trip</a>
+    <% } else { %><p>Anda diundang untuk bergabung dan berkolaborasi pada itinerary serta pengeluaran perjalanan ini.</p><form action="/join/<%= trip.invite_code %>" method="post"><button class="btn btn-primary btn-block" type="submit">Gabung ke trip</button></form><a class="btn btn-ghost btn-block" href="/dashboard">Nanti saja</a><% } %>
+  </section>
+</main>
+<%- include('../partials/footer') %>

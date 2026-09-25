@@ -1,0 +1,59 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+<main class="container page-space">
+  <%- include('partials/flash') %>
+
+  <section class="page-heading dashboard-heading dashboard-hero">
+    <div class="hero-copy">
+      <p class="context-label">Workspace perjalanan</p>
+      <h1>Bikin trip yang rapi,<br>tanpa ribet.</h1>
+      <p class="muted">Itinerary, peserta, dan budget dalam satu tempat.</p>
+    </div>
+  </section>
+
+  <section class="dashboard-strip compact-metrics" aria-label="Ringkasan perjalanan">
+    <article class="metric-card metric-total">
+      <span>Total trip</span>
+      <strong><%= stats.total %></strong>
+    </article>
+    <article class="metric-card">
+      <span>Akan datang</span>
+      <strong><%= stats.upcoming %></strong>
+    </article>
+    <article class="metric-card">
+      <span>Sedang berjalan</span>
+      <strong><%= stats.ongoing %></strong>
+    </article>
+    <article class="metric-card">
+      <span>Trip grup</span>
+      <strong><%= stats.group %></strong>
+    </article>
+  </section>
+
+  <% if (!trips.length) { %>
+    <section class="empty-state">
+      <div class="empty-icon" aria-hidden="true">✈</div>
+      <h2>Belum ada trip</h2>
+      <p>Buat trip pertama, lalu tambahkan itinerary dan biaya saat diperlukan.</p>
+      <a class="btn btn-primary" href="/trips/new">Buat trip pertama</a>
+    </section>
+  <% } else { %>
+    <section id="trip-list" class="section-head"><div><h2>Daftar trip</h2><p class="muted"><%= trips.length %> perjalanan tersimpan</p></div></section>
+    <div class="trip-grid">
+      <% trips.forEach((trip) => { %>
+        <a class="trip-card" href="/trips/<%= trip.id %>">
+          <div class="trip-card-head">
+            <span class="status-badge status-<%= trip.status %>"><%= trip.status === 'ongoing' ? 'Sedang berjalan' : trip.status === 'upcoming' ? 'Akan datang' : 'Selesai' %></span>
+            <span class="trip-type"><%= trip.trip_type === 'group' ? 'Grup' : 'Solo' %></span>
+          </div>
+          <div class="trip-card-body">
+            <div class="trip-title"><div><h3><%= trip.name %></h3><p><%= trip.destination %></p></div></div>
+            <div class="trip-meta"><span><%= dateLabel(trip.start_date) %> s.d. <%= dateLabel(trip.end_date) %></span><span><%= trip.member_count %> peserta</span></div>
+            <div class="trip-spend"><small>Pengeluaran tercatat</small><strong><%= money(trip.actual_spend, trip.currency) %></strong></div>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</main>
+<%- include('partials/footer') %>

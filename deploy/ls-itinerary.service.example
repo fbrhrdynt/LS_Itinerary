@@ -1,0 +1,18 @@
+[Unit]
+Description=LogiSource Itinerary
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/ls_itinerary
+EnvironmentFile=/opt/ls_itinerary/.env
+ExecStart=/home/ubuntu/.nvm/versions/node/v22.23.2/bin/node /opt/ls_itinerary/src/server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

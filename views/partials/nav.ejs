@@ -1,0 +1,12 @@
+<header class="topbar">
+  <a class="brand wordmark" href="/dashboard" aria-label="Dashboard Itinerary by Febro Herdyanto">
+    <span class="wordmark-title">Itinerary</span>
+    <small>by Febro Herdyanto</small>
+  </a>
+  <nav class="top-actions" aria-label="Navigasi utama">
+    <a class="nav-link <%= currentPath === '/dashboard' ? 'active' : '' %>" href="/dashboard">Trips</a>
+    <a class="btn btn-primary btn-sm" href="/trips/new">Trip baru</a>
+    <div class="user-chip"><span class="avatar"><%= (currentUser?.name || 'U').slice(0,1).toUpperCase() %></span><span class="hide-mobile"><%= currentUser?.name %></span></div>
+    <form action="/logout" method="post"><button class="btn btn-ghost btn-sm logout-btn" title="Keluar" aria-label="Keluar dari akun">Keluar</button></form>
+  </nav>
+</header>

@@ -1,0 +1,23 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<main class="container narrow page-space">
+  <a class="back-link" href="/dashboard">← Kembali ke dashboard</a>
+  <section class="page-heading"><div><h1>Mulai perjalanan baru</h1><p class="muted">Detail dasar bisa diubah lagi setelah trip dibuat.</p></div></section>
+  <%- include('../partials/flash') %>
+  <form action="/trips" method="post" class="panel form-panel">
+    <div class="form-section"><h2>Tipe perjalanan</h2><div class="choice-grid">
+      <label class="choice-card"><input type="radio" name="trip_type" value="solo" checked><strong>Trip solo</strong><small>Untuk perjalanan dan budget pribadi.</small></label>
+      <label class="choice-card"><input type="radio" name="trip_type" value="group"><strong>Trip grup</strong><small>Undang peserta dan bagi pengeluaran.</small></label>
+    </div></div>
+    <div class="form-section"><h2>Detail perjalanan</h2><div class="form-grid two">
+      <label>Nama trip<input type="text" name="name" required placeholder="Japan Autumn 2026"></label>
+      <label>Tujuan<input type="text" name="destination" required placeholder="Tokyo, Japan"></label>
+      <label>Tanggal mulai<input type="date" name="start_date" required></label>
+      <label>Tanggal selesai<input type="date" name="end_date" required></label>
+      <label>Mata uang<select name="currency"><option>IDR</option><option>USD</option><option>SGD</option><option>JPY</option><option>MYR</option><option>EUR</option><option>AUD</option><option>THB</option></select></label>
+      <label>Target budget awal<input type="number" name="overall_budget" min="0" step="0.01" placeholder="0"></label>
+    </div><label>Catatan<textarea name="notes" rows="3" placeholder="Tujuan utama, preferensi hotel, hal yang perlu diingat..."></textarea></label></div>
+    <div class="form-actions"><a class="btn btn-secondary" href="/dashboard">Batal</a><button class="btn btn-primary" type="submit">Buat trip</button></div>
+  </form>
+</main>
+<%- include('../partials/footer') %>
