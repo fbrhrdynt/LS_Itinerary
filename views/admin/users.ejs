@@ -1,0 +1,45 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<main class="container page-space admin-page">
+  <%- include('../partials/flash') %>
+  <a class="back-link" href="/admin">← Administrator</a>
+
+  <section class="admin-heading compact">
+    <div><p class="context-label">User management</p><h1>Kelola akses user.</h1><p class="muted">Tambah akun, ubah level, hold, blokir, reset password, atau hapus user.</p></div>
+  </section>
+
+  <details class="admin-create panel">
+    <summary>Tambah user <span>＋</span></summary>
+    <form action="/admin/users" method="post" class="form-grid five admin-create-form">
+      <label>Nama<input name="name" required minlength="2" placeholder="Nama lengkap"></label>
+      <label>Email<input type="email" name="email" required placeholder="email@example.com"></label>
+      <label>Password<input type="password" name="password" required minlength="8" placeholder="Minimal 8 karakter"></label>
+      <label>Level<select name="role"><option>User</option><option>Administrator</option></select></label>
+      <label>Status<select name="status"><option value="active">Aktif</option><option value="hold">Hold</option><option value="blocked">Diblokir</option></select></label>
+      <div class="span-5 form-actions"><button class="btn btn-primary" type="submit">Tambah user</button></div>
+    </form>
+  </details>
+
+  <section class="admin-section">
+    <div class="section-head admin-section-head"><div><h2>Semua user</h2><p class="muted"><%= users.length %> akun terdaftar</p></div></div>
+    <div class="table-wrap admin-table-wrap">
+      <table class="admin-table user-table">
+        <thead><tr><th>User</th><th>Level</th><th>Status</th><th>Trip dimiliki</th><th>Trip diikuti</th><th>Terdaftar</th><th></th></tr></thead>
+        <tbody>
+          <% users.forEach(user => { %>
+            <tr>
+              <td><strong><%= user.name %></strong><small class="table-sub"><%= user.email %></small></td>
+              <td><span class="access-badge <%= user.role === 'Administrator' ? 'access-admin' : '' %>"><%= user.role %></span></td>
+              <td><span class="status-text status-<%= user.status %>"><%= user.status === 'active' ? 'Aktif' : user.status === 'hold' ? 'Hold' : 'Diblokir' %></span></td>
+              <td><%= user.owned_trips %></td>
+              <td><%= user.joined_trips %></td>
+              <td><%= dateLabel(user.created_at) %></td>
+              <td class="right"><a class="btn btn-secondary btn-sm admin-row-action" href="/admin/users/<%= user.id %>">Kelola</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<%- include('../partials/footer') %>

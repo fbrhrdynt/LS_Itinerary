@@ -1,0 +1,47 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<main class="container narrow page-space admin-page">
+  <%- include('../partials/flash') %>
+  <a class="back-link" href="/admin/users">← Semua user</a>
+
+  <section class="admin-user-heading">
+    <div class="avatar lg"><%= user.name.slice(0,1).toUpperCase() %></div>
+    <div><p class="context-label"><%= user.role %></p><h1><%= user.name %></h1><p class="muted"><%= user.email %></p></div>
+    <span class="status-text status-<%= user.status %>"><%= user.status === 'active' ? 'Aktif' : user.status === 'hold' ? 'Hold' : 'Diblokir' %></span>
+  </section>
+
+  <form action="/admin/users/<%= user.id %>" method="post" class="panel form-panel admin-user-form">
+    <div class="form-grid two">
+      <label>Nama<input name="name" value="<%= user.name %>" required minlength="2"></label>
+      <label>Email<input type="email" name="email" value="<%= user.email %>" required></label>
+      <label>Level<select name="role"><option <%= user.role === 'User' ? 'selected' : '' %>>User</option><option <%= user.role === 'Administrator' ? 'selected' : '' %>>Administrator</option></select></label>
+      <label>Status<select name="status"><option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Aktif</option><option value="hold" <%= user.status === 'hold' ? 'selected' : '' %>>Hold</option><option value="blocked" <%= user.status === 'blocked' ? 'selected' : '' %>>Diblokir</option></select></label>
+      <label class="span-2">Password baru<input type="password" name="password" minlength="8" placeholder="Kosongkan jika tidak ingin mengganti password"></label>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Simpan perubahan</button></div>
+  </form>
+
+  <section class="admin-section">
+    <div class="admin-user-meta">
+      <div><span>Terdaftar</span><strong><%= dateLabel(user.created_at) %></strong></div>
+      <div><span>Terakhir login</span><strong><%= user.last_login_at ? new Date(user.last_login_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}) : 'Belum pernah' %></strong></div>
+      <div><span>Trip dimiliki</span><strong><%= ownedTrips.length %></strong></div>
+      <div><span>Trip diikuti</span><strong><%= joinedTrips.length %></strong></div>
+    </div>
+  </section>
+
+  <% if (ownedTrips.length || joinedTrips.length) { %>
+  <section class="admin-section">
+    <div class="section-head admin-section-head"><div><h2>Perjalanan user</h2></div></div>
+    <div class="admin-trip-links">
+      <% ownedTrips.forEach(trip => { %><a href="/trips/<%= trip.id %>"><strong><%= trip.name %></strong><span>Owner · <%= trip.destination %></span></a><% }) %>
+      <% joinedTrips.filter(trip => !ownedTrips.some(owned => Number(owned.id) === Number(trip.id))).forEach(trip => { %><a href="/trips/<%= trip.id %>"><strong><%= trip.name %></strong><span>Member · <%= trip.destination %></span></a><% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (Number(user.id) !== Number(currentUser.id)) { %>
+  <details class="danger-zone admin-danger"><summary>Hapus user</summary><div><p>Menghapus user juga menghapus trip yang dimilikinya. Gunakan Hold atau Blokir jika datanya masih perlu disimpan.</p><form action="/admin/users/<%= user.id %>/delete" method="post" data-confirm="Hapus user ini beserta trip yang dimilikinya? Tindakan ini tidak dapat dibatalkan."><button class="btn btn-danger" type="submit">Hapus user</button></form></div></details>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>

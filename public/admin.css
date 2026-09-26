@@ -1,0 +1,188 @@
+.admin-page {
+  --admin-ink: #10233f;
+  --admin-muted: #607896;
+  --admin-line: #d9e6f5;
+  --admin-soft: #edf5ff;
+  --admin-blue: #5b9df2;
+  --admin-red: #c83f54;
+}
+
+.admin-heading {
+  margin-bottom: 28px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.admin-heading.compact { align-items: start; }
+.admin-heading h1 { max-width: 760px; margin-bottom: 8px; }
+.admin-heading .muted { max-width: 650px; font-size: 15px; }
+
+.admin-metric-strip {
+  margin: 0 0 42px;
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+  scrollbar-width: none;
+}
+
+.admin-metric-strip::-webkit-scrollbar { display: none; }
+.admin-metric-strip > div {
+  min-width: 122px;
+  padding: 15px 18px;
+  display: grid;
+  gap: 4px;
+  border-right: 1px solid var(--admin-line);
+}
+.admin-metric-strip > div:last-child { border-right: 0; }
+.admin-metric-strip span { color: var(--admin-muted); font-size: 11px; font-weight: 650; }
+.admin-metric-strip strong { color: var(--admin-ink); font-size: 24px; letter-spacing: -.035em; }
+
+.admin-section { margin-top: 38px; }
+.admin-section-head { align-items: center; }
+.admin-section-head h2 { font-size: 24px; }
+.text-link { color: #397acb; font-size: 12px; font-weight: 750; }
+.text-link:hover { text-decoration: underline; }
+
+.admin-table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+}
+.admin-table { width: 100%; min-width: 820px; border-collapse: collapse; }
+.admin-table th {
+  padding: 12px 15px;
+  color: var(--admin-muted);
+  background: #f8fbff;
+  border-bottom: 1px solid var(--admin-line);
+  text-align: left;
+  font-size: 10px;
+  font-weight: 750;
+}
+.admin-table td {
+  padding: 14px 15px;
+  border-bottom: 1px solid #edf2f7;
+  color: var(--admin-ink);
+  font-size: 12px;
+  vertical-align: middle;
+}
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+.admin-table tbody tr:hover { background: #fbfdff; }
+.admin-table .right { text-align: right; }
+
+.access-badge,
+.status-text {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 750;
+}
+.access-badge { background: #eef3f8; color: #51667f; }
+.access-admin { background: #e6f1ff; color: #2868b7; }
+.status-active { background: #e7f6ef; color: #237159; }
+.status-hold { background: #fff4d9; color: #8c661c; }
+.status-blocked { background: #fff0f2; color: #a93246; }
+
+.admin-create { padding: 0 20px; border-color: var(--admin-line); }
+.admin-create > summary {
+  min-height: 58px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+.admin-create > summary::-webkit-details-marker { display: none; }
+.admin-create[open] > summary { border-bottom: 1px solid var(--admin-line); }
+.admin-create-form { padding: 20px 0; }
+.form-grid.five { grid-template-columns: 1.1fr 1.3fr 1.1fr .8fr .8fr; }
+.span-5 { grid-column: span 5; }
+.admin-row-action { min-height: 36px; padding: 7px 11px; border-radius: 8px; }
+
+.admin-user-heading {
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+.admin-user-heading h1 { margin-bottom: 2px; font-size: clamp(32px, 5vw, 48px); }
+.admin-user-heading .context-label { margin-bottom: 5px; }
+.admin-user-heading .muted { margin: 0; }
+.admin-user-form { border-color: var(--admin-line); }
+
+.admin-user-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--admin-line);
+  border-bottom: 1px solid var(--admin-line);
+}
+.admin-user-meta > div { padding: 16px 18px; border-right: 1px solid var(--admin-line); }
+.admin-user-meta > div:last-child { border-right: 0; }
+.admin-user-meta span { display: block; color: var(--admin-muted); font-size: 10px; }
+.admin-user-meta strong { display: block; margin-top: 4px; color: var(--admin-ink); font-size: 13px; }
+
+.admin-trip-links { display: grid; border-top: 1px solid var(--admin-line); }
+.admin-trip-links a {
+  padding: 14px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--admin-line);
+}
+.admin-trip-links a:hover strong { color: #397acb; }
+.admin-trip-links strong { font-size: 13px; }
+.admin-trip-links span { color: var(--admin-muted); font-size: 11px; text-align: right; }
+
+.admin-log-list { border-top: 1px solid var(--admin-line); }
+.admin-log-list > div {
+  padding: 12px 2px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--admin-line);
+  font-size: 12px;
+}
+.admin-log-list small { text-align: right; }
+.admin-danger { margin-top: 40px; }
+
+.admin-nav-link {
+  color: #356fae;
+  background: #edf5ff;
+}
+
+@media (max-width: 900px) {
+  .form-grid.five { grid-template-columns: repeat(2, 1fr); }
+  .span-5 { grid-column: span 2; }
+  .admin-user-meta { grid-template-columns: repeat(2, 1fr); }
+  .admin-user-meta > div:nth-child(2) { border-right: 0; }
+  .admin-user-meta > div:nth-child(-n+2) { border-bottom: 1px solid var(--admin-line); }
+}
+
+@media (max-width: 680px) {
+  .admin-heading { align-items: flex-start; flex-direction: column; }
+  .admin-heading .btn { width: 100%; }
+  .form-grid.five { grid-template-columns: 1fr; }
+  .span-5 { grid-column: span 1; }
+  .admin-user-heading { grid-template-columns: auto 1fr; }
+  .admin-user-heading > .status-text { grid-column: 1 / -1; width: max-content; }
+  .admin-user-meta { grid-template-columns: 1fr; }
+  .admin-user-meta > div { border-right: 0; border-bottom: 1px solid var(--admin-line); }
+  .admin-user-meta > div:last-child { border-bottom: 0; }
+  .admin-trip-links a { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .admin-trip-links span { text-align: left; }
+  .admin-log-list > div { flex-direction: column; gap: 3px; }
+  .admin-log-list small { text-align: left; }
+}

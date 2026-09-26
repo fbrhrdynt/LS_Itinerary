@@ -1,13 +1,13 @@
 {
   "name": "logisource-itinerary",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Travel itinerary, group planning and per-person budget manager by LogiSource Digital",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "check": "node --check src/server.js && node --check src/database.js && node --check src/utils.js && node --check src/routes/auth.js && node --check src/routes/dashboard.js && node --check src/routes/trips.js && node --check public/app.js",
+    "check": "node --check src/server.js && node --check src/database.js && node --check src/utils.js && node --check src/routes/auth.js && node --check src/routes/dashboard.js && node --check src/routes/admin.js && node --check src/routes/trips.js && node --check public/app.js",
     "test": "node --test tests/*.test.js"
   },
   "engines": {

@@ -10,6 +10,7 @@ import { initializeDatabase, pool } from './database.js';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
 import tripRoutes from './routes/trips.js';
+import adminRoutes from './routes/admin.js';
 import { dateLabel, inputDate, money, shortDate } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +50,7 @@ app.use(session({
 app.use((req, res, next) => {
   res.locals.appName = process.env.APP_NAME || 'LogiSource Itinerary';
   res.locals.currentUser = req.session.user || null;
+  res.locals.isAdmin = req.session.user?.role === 'Administrator';
   res.locals.currentPath = req.path;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
@@ -59,10 +61,14 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => res.redirect(req.session.user ? '/dashboard' : '/login'));
+app.get('/', (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+  return res.redirect(req.session.user.role === 'Administrator' ? '/admin' : '/dashboard');
+});
 app.get('/health', (req, res) => res.json({ ok: true, service: process.env.APP_NAME || 'LogiSource Itinerary' }));
 app.use(authRoutes);
 app.use(dashboardRoutes);
+app.use(adminRoutes);
 app.use(tripRoutes);
 
 app.use((req, res) => res.status(404).render('error', { title: 'Halaman tidak ditemukan', status: 404, message: 'Halaman yang Anda cari tidak tersedia.' }));

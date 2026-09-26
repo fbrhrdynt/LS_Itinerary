@@ -6,6 +6,38 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'User';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='users_role_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('Administrator','User'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='users_status_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_status_check CHECK (status IN ('active','hold','blocked'));
+  END IF;
+END $$;
+
+UPDATE users
+   SET role='Administrator', updated_at=NOW()
+ WHERE id=(SELECT id FROM users ORDER BY created_at ASC, id ASC LIMIT 1)
+   AND NOT EXISTS (SELECT 1 FROM users WHERE role='Administrator');
+
+CREATE TABLE IF NOT EXISTS admin_audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  administrator_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  action VARCHAR(80) NOT NULL,
+  target_type VARCHAR(40) NOT NULL,
+  target_id BIGINT,
+  details TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_logs(created_at DESC);
+
 CREATE TABLE IF NOT EXISTS trips (
   id BIGSERIAL PRIMARY KEY,
   owner_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

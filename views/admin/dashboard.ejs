@@ -1,0 +1,84 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<main class="container page-space admin-page">
+  <%- include('../partials/flash') %>
+
+  <section class="admin-heading">
+    <div>
+      <p class="context-label">Administrator</p>
+      <h1>Kontrol seluruh itinerary.</h1>
+      <p class="muted">User, trip, itinerary, dan aktivitas sistem terlihat dari satu tempat.</p>
+    </div>
+    <a class="btn btn-primary" href="/admin/users">Kelola user</a>
+  </section>
+
+  <section class="admin-metric-strip" aria-label="Statistik platform">
+    <div><span>User</span><strong><%= stats.users_total %></strong></div>
+    <div><span>Aktif</span><strong><%= stats.users_active %></strong></div>
+    <div><span>Hold</span><strong><%= stats.users_hold %></strong></div>
+    <div><span>Diblokir</span><strong><%= stats.users_blocked %></strong></div>
+    <div><span>Trip</span><strong><%= stats.trips_total %></strong></div>
+    <div><span>Trip grup</span><strong><%= stats.trips_group %></strong></div>
+    <div><span>Agenda</span><strong><%= stats.itinerary_total %></strong></div>
+    <div><span>Expense</span><strong><%= stats.expenses_total %></strong></div>
+  </section>
+
+  <section class="admin-section">
+    <div class="section-head admin-section-head">
+      <div><h2>User terbaru</h2><p class="muted">Akun yang baru terdaftar dan status aksesnya.</p></div>
+      <a class="text-link" href="/admin/users">Lihat semua user →</a>
+    </div>
+    <div class="table-wrap admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>User</th><th>Level</th><th>Status</th><th>Trip dimiliki</th><th>Terakhir login</th><th></th></tr></thead>
+        <tbody>
+          <% users.forEach(user => { %>
+            <tr>
+              <td><strong><%= user.name %></strong><small class="table-sub"><%= user.email %></small></td>
+              <td><span class="access-badge <%= user.role === 'Administrator' ? 'access-admin' : '' %>"><%= user.role %></span></td>
+              <td><span class="status-text status-<%= user.status %>"><%= user.status === 'active' ? 'Aktif' : user.status === 'hold' ? 'Hold' : 'Diblokir' %></span></td>
+              <td><%= user.owned_trips %></td>
+              <td><%= user.last_login_at ? new Date(user.last_login_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}) : 'Belum pernah' %></td>
+              <td class="right"><a class="text-link" href="/admin/users/<%= user.id %>">Kelola</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="admin-section">
+    <div class="section-head admin-section-head"><div><h2>Trip terbaru</h2><p class="muted">Semua trip dapat dibuka dan dikelola oleh Administrator.</p></div></div>
+    <div class="table-wrap admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Trip</th><th>Owner</th><th>Tanggal</th><th>Peserta</th><th>Agenda</th><th>Expense</th><th></th></tr></thead>
+        <tbody>
+          <% trips.forEach(trip => { %>
+            <tr>
+              <td><strong><%= trip.name %></strong><small class="table-sub"><%= trip.destination %> · <%= trip.trip_type === 'group' ? 'Grup' : 'Solo' %></small></td>
+              <td><%= trip.owner_name %></td>
+              <td><%= dateLabel(trip.start_date) %> – <%= dateLabel(trip.end_date) %></td>
+              <td><%= trip.member_count %></td>
+              <td><%= trip.itinerary_count %></td>
+              <td><%= trip.expense_count %></td>
+              <td class="right"><a class="text-link" href="/trips/<%= trip.id %>">Buka</a></td>
+            </tr>
+          <% }) %>
+          <% if (!trips.length) { %><tr><td colspan="7" class="table-empty">Belum ada trip di platform.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <% if (auditLogs.length) { %>
+  <section class="admin-section admin-log-section">
+    <div class="section-head admin-section-head"><div><h2>Aktivitas admin</h2><p class="muted">Perubahan akses user terbaru.</p></div></div>
+    <div class="admin-log-list">
+      <% auditLogs.forEach(log => { %>
+        <div><span><strong><%= log.administrator_name || 'Administrator' %></strong> · <%= log.action.replaceAll('_',' ') %></span><small><%= new Date(log.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}) %><%= log.details ? ` · ${log.details}` : '' %></small></div>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>

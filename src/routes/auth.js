@@ -20,16 +20,21 @@ router.post('/register', authLimiter, guestOnly, async (req, res, next) => {
       flash(req, 'danger', 'Isi nama dan email dengan benar. Password minimal 8 karakter.');
       return res.redirect('/register');
     }
-    const existing = await query('SELECT id FROM users WHERE email = $1 LIMIT 1', [email]);
+
+    const existing = await query('SELECT id FROM users WHERE email=$1 LIMIT 1', [email]);
     if (existing.rowCount) {
       flash(req, 'danger', 'Email sudah terdaftar. Silakan login.');
       return res.redirect('/login');
     }
+
     const hash = await bcrypt.hash(password, 12);
     const result = await query(
-      'INSERT INTO users(name, email, password_hash) VALUES($1,$2,$3) RETURNING id,name,email',
+      `INSERT INTO users(name,email,password_hash,role,status)
+       VALUES($1,$2,$3,'User','active')
+       RETURNING id,name,email,role,status`,
       [name, email, hash]
     );
+
     req.session.user = result.rows[0];
     const redirectTo = safeReturnTo(req.session.returnTo);
     delete req.session.returnTo;
@@ -41,16 +46,39 @@ router.post('/login', authLimiter, guestOnly, async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
-    const result = await query('SELECT id,name,email,password_hash FROM users WHERE email = $1 LIMIT 1', [email]);
+    const result = await query(
+      'SELECT id,name,email,password_hash,role,status FROM users WHERE email=$1 LIMIT 1',
+      [email]
+    );
     const user = result.rows[0];
+
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       flash(req, 'danger', 'Email atau password salah.');
       return res.redirect('/login');
     }
-    req.session.user = { id: user.id, name: user.name, email: user.email };
-    const redirectTo = safeReturnTo(req.session.returnTo);
+
+    if (user.status !== 'active') {
+      flash(req, 'danger', user.status === 'hold'
+        ? 'Akun sedang di-hold oleh Administrator.'
+        : 'Akun diblokir. Hubungi Administrator.');
+      return res.redirect('/login');
+    }
+
+    await query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    };
+
+    const returnTo = req.session.returnTo;
     delete req.session.returnTo;
-    res.redirect(redirectTo);
+    const destination = returnTo
+      ? safeReturnTo(returnTo)
+      : user.role === 'Administrator' ? '/admin' : '/dashboard';
+    res.redirect(destination);
   } catch (err) { next(err); }
 });
 
