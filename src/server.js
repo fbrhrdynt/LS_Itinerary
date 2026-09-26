@@ -65,6 +65,7 @@ app.get('/', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
   return res.redirect(req.session.user.role === 'Administrator' ? '/admin' : '/dashboard');
 });
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/health', (req, res) => res.json({ ok: true, service: process.env.APP_NAME || 'LogiSource Itinerary' }));
 app.use(authRoutes);
 app.use(dashboardRoutes);

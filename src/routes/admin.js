@@ -5,7 +5,7 @@ import { requireAdmin, requireAuth } from '../middleware.js';
 import { flash } from '../utils.js';
 
 const router = express.Router();
-router.use(requireAuth, requireAdmin);
+router.use('/admin', requireAuth, requireAdmin);
 
 const ROLES = new Set(['Administrator', 'User']);
 const STATUSES = new Set(['active', 'hold', 'blocked']);

@@ -44,30 +44,30 @@ function dateFromKey(value) {
   const key = dateKey(value);
   if (!key) return null;
   const [year, month, day] = key.split('-').map(Number);
-  const d = new Date(Date.UTC(year, month - 1, day));
-  return Number.isNaN(d.getTime()) ? null : d;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 export function dateLabel(value) {
-  const d = dateFromKey(value);
-  if (!d) return '-';
+  const date = dateFromKey(value);
+  if (!date) return '-';
   return new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     timeZone: 'UTC',
-  }).format(d);
+  }).format(date);
 }
 
 export function shortDate(value) {
-  const d = dateFromKey(value);
-  if (!d) return '-';
+  const date = dateFromKey(value);
+  if (!date) return '-';
   return new Intl.DateTimeFormat('id-ID', {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
     timeZone: 'UTC',
-  }).format(d);
+  }).format(date);
 }
 
 export function inputDate(value) {
@@ -90,6 +90,19 @@ export function flash(req, type, message) {
   req.session.flash = { type, message };
 }
 
-export function safeReturnTo(path) {
-  return typeof path === 'string' && path.startsWith('/') && !path.startsWith('//') ? path : '/dashboard';
+export function safeReturnTo(path, fallback = '/dashboard') {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return fallback;
+
+  let parsed;
+  try {
+    parsed = new URL(path, 'http://local');
+  } catch {
+    return fallback;
+  }
+
+  const allowedPrefixes = ['/dashboard', '/admin', '/trips', '/join'];
+  const allowed = allowedPrefixes.some(prefix => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`));
+  if (!allowed) return fallback;
+
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }

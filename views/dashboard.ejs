@@ -28,7 +28,7 @@
     <section id="trip-list" class="section-head"><div><h2>Daftar trip</h2><p class="muted"><%= trips.length %> perjalanan tersimpan</p></div></section>
     <div class="trip-grid">
       <% trips.forEach((trip) => { %>
-        <a class="trip-card" href="/trips/<%= trip.id %>">
+        <a class="trip-card trip-card-<%= trip.status %>" href="/trips/<%= trip.id %>">
           <div class="trip-card-head">
             <span class="status-badge status-<%= trip.status %>"><%= trip.status === 'ongoing' ? 'Sedang berjalan' : trip.status === 'upcoming' ? 'Akan datang' : 'Selesai' %></span>
             <span class="trip-type"><%= trip.trip_type === 'group' ? 'Grup' : 'Solo' %></span>

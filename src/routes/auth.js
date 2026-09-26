@@ -36,7 +36,7 @@ router.post('/register', authLimiter, guestOnly, async (req, res, next) => {
     );
 
     req.session.user = result.rows[0];
-    const redirectTo = safeReturnTo(req.session.returnTo);
+    const redirectTo = safeReturnTo(req.session.returnTo, '/dashboard');
     delete req.session.returnTo;
     res.redirect(redirectTo);
   } catch (err) { next(err); }
@@ -75,9 +75,9 @@ router.post('/login', authLimiter, guestOnly, async (req, res, next) => {
 
     const returnTo = req.session.returnTo;
     delete req.session.returnTo;
-    const destination = returnTo
-      ? safeReturnTo(returnTo)
-      : user.role === 'Administrator' ? '/admin' : '/dashboard';
+    const defaultDestination = user.role === 'Administrator' ? '/admin' : '/dashboard';
+    let destination = safeReturnTo(returnTo, defaultDestination);
+    if (user.role !== 'Administrator' && destination.startsWith('/admin')) destination = '/dashboard';
     res.redirect(destination);
   } catch (err) { next(err); }
 });

@@ -2,10 +2,10 @@ import express from 'express';
 import { query, pool } from '../database.js';
 import { requireAuth } from '../middleware.js';
 import { getTripAccess, requireTrip, requireOwner } from '../services/tripAccess.js';
-import { dateKey, flash, inviteCode, todayDateKey, toNumber } from '../utils.js';
+import { flash, inviteCode, toNumber } from '../utils.js';
 
 const router = express.Router();
-router.use(requireAuth);
+router.use(['/trips', '/join'], requireAuth);
 
 function arrayify(value) {
   if (Array.isArray(value)) return value;
@@ -131,7 +131,7 @@ router.get('/trips/:id', requireTrip, async (req, res, next) => {
       + transportation.reduce((a,x)=>a+Number(x.total_cost||0),0);
     const actual = expenses.reduce((a,x)=>a+Number(x.amount||0),0);
     const overallBudget = Number(req.trip.overall_budget || 0);
-    const groupedItinerary = Object.groupBy ? Object.groupBy(itinerary, i => dateKey(i.item_date)) : itinerary.reduce((acc,i)=>{const k=dateKey(i.item_date);(acc[k] ||= []).push(i);return acc;},{});
+    const groupedItinerary = Object.groupBy ? Object.groupBy(itinerary, i => String(i.item_date).slice(0,10)) : itinerary.reduce((acc,i)=>{const k=String(i.item_date).slice(0,10);(acc[k] ||= []).push(i);return acc;},{});
     const settle = settlement(members, expenses, splits);
     const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
     res.render('trips/detail', {
@@ -186,7 +186,7 @@ router.post('/trips/:id/members/:memberId/delete', requireTrip, requireOwner, as
 router.post('/trips/:id/itinerary', requireTrip, async (req,res,next)=>{
   try {
     const date=String(req.body.item_date||''); const title=String(req.body.title||'').trim();
-    if(!date||!title||date<dateKey(req.trip.start_date)||date>dateKey(req.trip.end_date)) { flash(req,'danger','Tanggal itinerary harus berada dalam periode trip.'); return res.redirect(`/trips/${req.trip.id}#itinerary`); }
+    if(!date||!title||date<String(req.trip.start_date).slice(0,10)||date>String(req.trip.end_date).slice(0,10)) { flash(req,'danger','Tanggal itinerary harus berada dalam periode trip.'); return res.redirect(`/trips/${req.trip.id}#itinerary`); }
     await query(`INSERT INTO itinerary_items(trip_id,item_date,start_time,end_time,title,category,location,notes,estimated_cost,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,[
       req.trip.id,date,req.body.start_time||null,req.body.end_time||null,title,String(req.body.category||'activity'),String(req.body.location||'').trim()||null,String(req.body.notes||'').trim()||null,Math.max(0,toNumber(req.body.estimated_cost)),req.session.user.id]);
     flash(req,'success','Agenda ditambahkan.'); res.redirect(`/trips/${req.trip.id}#itinerary`);
@@ -226,7 +226,7 @@ router.post('/trips/:id/expenses', requireTrip, async(req,res,next)=>{
     selected=selected.filter(id=>valid.has(id)); if(!selected.length) selected=[...valid];
     const cents=Math.round(amount*100); const base=Math.floor(cents/selected.length); let remainder=cents-base*selected.length;
     await client.query('BEGIN');
-    const e=await client.query(`INSERT INTO expenses(trip_id,expense_date,description,category,amount,paid_by_member_id,notes,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,[req.trip.id,String(req.body.expense_date || todayDateKey()),String(req.body.description||'Expense').trim(),String(req.body.category||'other'),amount,paidBy,String(req.body.notes||'').trim()||null,req.session.user.id]);
+    const e=await client.query(`INSERT INTO expenses(trip_id,expense_date,description,category,amount,paid_by_member_id,notes,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,[req.trip.id,String(req.body.expense_date||String(new Date().toISOString()).slice(0,10)),String(req.body.description||'Expense').trim(),String(req.body.category||'other'),amount,paidBy,String(req.body.notes||'').trim()||null,req.session.user.id]);
     for(const memberId of selected){const share=(base+(remainder>0?1:0))/100;if(remainder>0)remainder--;await client.query('INSERT INTO expense_splits(expense_id,member_id,share_amount) VALUES($1,$2,$3)',[e.rows[0].id,memberId,share]);}
     await client.query('COMMIT'); flash(req,'success','Expense ditambahkan dan dibagi otomatis.');res.redirect(`/trips/${req.trip.id}#expenses`);
   }catch(err){await client.query('ROLLBACK');next(err);}finally{client.release();}
