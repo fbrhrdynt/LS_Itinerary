@@ -1,5 +1,5 @@
 <%- include('../partials/head') %>
-<main class="auth-page auth-page-centered">
+<main class="auth-page-centered">
   <div class="auth-centered-shell">
     <header class="auth-centered-brand">
       <a class="brand wordmark" href="/login" aria-label="Itinerary by Febro Herdyanto">
@@ -9,31 +9,20 @@
     </header>
 
     <section class="auth-centered-hero">
-      <p class="auth-kicker">Siap jalan?</p>
-      <h1>Trip lebih rapi.<br><span>Budget lebih jelas.</span></h1>
-      <p class="auth-lead">Satu tempat untuk itinerary, peserta, booking, dan biaya perjalanan.</p>
-
-      <div class="auth-feature-row" aria-label="Fitur utama">
-        <span>Itinerary</span>
-        <span>Split bill</span>
-        <span>Budget</span>
-      </div>
+      <p class="auth-kicker">Rencana perjalanan</p>
+      <h1>Trip rapi.<br><span>Biaya jelas.</span></h1>
+      <p class="auth-lead">Itinerary, peserta, booking, dan budget dalam satu workspace.</p>
+      <div class="auth-feature-row" aria-label="Fitur utama"><span>Solo & grup</span><span>Itinerary</span><span>Split bill</span></div>
     </section>
 
-    <section class="auth-card auth-card-centered" aria-labelledby="login-title">
-      <div class="auth-card-head">
-        <h2 id="login-title">Masuk</h2>
-        <p class="muted">Lanjutkan trip yang sedang Anda atur.</p>
-      </div>
-
+    <section class="auth-card-centered" aria-labelledby="login-title">
+      <div class="auth-card-head"><h2 id="login-title">Masuk</h2><p class="muted">Lanjutkan trip yang sedang Anda atur.</p></div>
       <%- include('../partials/flash') %>
-
       <form action="/login" method="post" class="form-stack">
         <label>Email<input type="email" name="email" autocomplete="email" required placeholder="nama@email.com"></label>
         <label>Password<input type="password" name="password" autocomplete="current-password" required placeholder="••••••••"></label>
         <button class="btn btn-primary btn-block" type="submit">Masuk</button>
       </form>
-
       <p class="auth-switch">Belum punya akun? <a href="/register">Buat akun</a></p>
     </section>
   </div>

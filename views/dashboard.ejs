@@ -3,11 +3,11 @@
 <main class="container page-space">
   <%- include('partials/flash') %>
 
-  <section class="page-heading dashboard-heading dashboard-hero">
-    <div class="hero-copy">
-      <p class="context-label">Workspace perjalanan</p>
-      <h1>Bikin trip yang rapi,<br>tanpa ribet.</h1>
-      <p class="muted">Itinerary, peserta, dan budget dalam satu tempat.</p>
+  <section class="page-heading dashboard-heading">
+    <div>
+      <p class="context-label">Perjalanan</p>
+      <h1>Trip Anda</h1>
+      <p class="muted">Atur itinerary, peserta, booking, dan biaya dari satu tempat.</p>
     </div>
   </section>
 
@@ -20,9 +20,8 @@
 
   <% if (!trips.length) { %>
     <section class="empty-state">
-      <div class="empty-icon" aria-hidden="true">✈</div>
       <h2>Belum ada trip</h2>
-      <p>Buat trip pertama, lalu tambahkan itinerary dan biaya saat diperlukan.</p>
+      <p>Buat trip pertama, lalu isi itinerary dan biaya saat rencana mulai terbentuk.</p>
       <a class="btn btn-primary" href="/trips/new">Buat trip pertama</a>
     </section>
   <% } else { %>

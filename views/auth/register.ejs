@@ -1,5 +1,5 @@
 <%- include('../partials/head') %>
-<main class="auth-page auth-page-centered">
+<main class="auth-page-centered">
   <div class="auth-centered-shell">
     <header class="auth-centered-brand">
       <a class="brand wordmark" href="/register" aria-label="Itinerary by Febro Herdyanto">
@@ -9,32 +9,21 @@
     </header>
 
     <section class="auth-centered-hero">
-      <p class="auth-kicker">Mulai trip baru</p>
-      <h1>Rencanakan dulu.<br><span>Jalan lebih tenang.</span></h1>
-      <p class="auth-lead">Buat trip solo atau grup, lalu atur itinerary dan budget dalam satu tempat.</p>
-
-      <div class="auth-feature-row" aria-label="Fitur utama">
-        <span>Trip solo</span>
-        <span>Trip grup</span>
-        <span>Budget per orang</span>
-      </div>
+      <p class="auth-kicker">Mulai merencanakan</p>
+      <h1>Buat trip.<br><span>Atur bersama.</span></h1>
+      <p class="auth-lead">Buat perjalanan solo atau grup, lalu susun itinerary dan budget tanpa spreadsheet terpisah.</p>
+      <div class="auth-feature-row" aria-label="Fitur utama"><span>Trip solo</span><span>Trip grup</span><span>Budget per orang</span></div>
     </section>
 
-    <section class="auth-card auth-card-centered" aria-labelledby="register-title">
-      <div class="auth-card-head">
-        <h2 id="register-title">Buat akun</h2>
-        <p class="muted">Simpan trip dan bagikan ke peserta lain.</p>
-      </div>
-
+    <section class="auth-card-centered" aria-labelledby="register-title">
+      <div class="auth-card-head"><h2 id="register-title">Buat akun</h2><p class="muted">Simpan trip dan undang peserta saat diperlukan.</p></div>
       <%- include('../partials/flash') %>
-
       <form action="/register" method="post" class="form-stack">
         <label>Nama lengkap<input type="text" name="name" autocomplete="name" required minlength="2" placeholder="Nama Anda"></label>
         <label>Email<input type="email" name="email" autocomplete="email" required placeholder="nama@email.com"></label>
         <label>Password<input type="password" name="password" autocomplete="new-password" required minlength="8" placeholder="Minimal 8 karakter"></label>
         <button class="btn btn-primary btn-block" type="submit">Buat akun</button>
       </form>
-
       <p class="auth-switch">Sudah punya akun? <a href="/login">Masuk</a></p>
     </section>
   </div>

@@ -5,29 +5,32 @@ Audience: mobile-first Indonesian users who want itinerary and cost planning wit
 
 ## Character
 
-- Clear, youthful, and useful rather than corporate or decorative.
-- Light blue is the main accent; deep navy anchors text.
-- The interface should feel like a working travel notebook, not a generic SaaS dashboard.
+- Flat, youthful, and practical.
+- Light blue is the single product accent; navy anchors text.
+- The interface should feel like a modern travel notebook, not a generic SaaS dashboard.
 
 ## Layout
 
-- Put the primary task first: trips for users, user control for administrators.
-- Use compact inline metrics only when they reflect real database values.
-- Use tables when scanning and comparing records is the job; use cards only for independently actionable items.
-- Keep mobile reflow intentional. Dense rows may scroll horizontally when that preserves scanability.
+- Put the work first: trips for users, account control for administrators.
+- Real metrics stay compact and inline; they are context, not the page hero.
+- Use tables for comparison, cards only when an item is independently actionable.
+- Use borders, whitespace, and type hierarchy instead of floating card stacks.
+- Mobile is an intentional reflow, not a squeezed desktop page.
 
 ## UI
 
-- Moderate radius. Avoid making every control a pill.
-- Minimal shadow. Borders and spacing should carry most hierarchy.
-- No decorative gradients, glow, fake charts, filler activity, fake statistics, or dead controls.
-- Accent color is reserved for primary actions, active navigation, and real status emphasis.
+- Flat surfaces. No gradients, glow, glass, or decorative background effects.
+- No broad drop shadows. Hierarchy comes from spacing, borders, and typography.
+- Moderate radius: 8–10px for panels and controls; pills only for true tags/status.
+- Use the blue accent only for primary actions, active navigation, and meaningful emphasis.
+- System UI type stack; no decorative font dependency.
 
 ## Copy
 
 - Concise Indonesian.
-- Buttons name the action: "Tambah user", "Simpan perubahan", "Buka".
+- Buttons name the action: "Buat trip", "Tambah agenda", "Simpan perubahan".
 - Status labels describe real state only.
+- No hype, fake statistics, filler sections, or dead controls.
 
 ## Motion
 
