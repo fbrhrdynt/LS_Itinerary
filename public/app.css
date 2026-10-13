@@ -808,3 +808,58 @@ details.add-panel[open] {
   .error-number { min-height: 96px; font-size: 38px; }
   .error-copy { padding: 26px 22px; }
 }
+
+/* FEBRO NEO v0.1 — travel notebook, preserve forms/route permissions */
+:root{--neo-border:#173052;--neo-shadow:4px 4px 0 var(--neo-border);--bg:#f2f8ff;--surface:#fff;--surface-soft:#e8f3ff;--text:#173052;--muted:#5d6d85;--line:#c8d7e8;--line-strong:#728db0;--blue:#568ee1;--blue-dark:#285ea9;--blue-soft:#deebff;--radius:15px;--radius-sm:11px}
+body{font-family:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;letter-spacing:-.009em}
+.page-space{padding-top:clamp(22px,3vw,38px)}
+.container{max-width:1200px}
+.topbar{background:#f2f8ff;border-bottom:2px solid var(--neo-border)}
+.wordmark-title{font-weight:850;letter-spacing:-.055em;font-size:19px}
+.brand.wordmark small{font-weight:650}
+.nav-link{border-bottom-width:3px;min-height:44px}
+.nav-link.active{border-bottom-color:var(--blue-dark)}
+.user-chip .avatar{border:2px solid var(--neo-border);border-radius:11px;background:#ffdc80;color:#172e48}
+.panel{border:2px solid var(--neo-border);border-radius:15px;background:#fff}
+.btn{border-width:2px;border-radius:12px;font-weight:750;transition:transform .16s ease,background-color .16s ease,box-shadow .16s ease}
+.btn-primary{background:#568ee1;color:#fff;border-color:var(--neo-border);box-shadow:3px 3px 0 var(--neo-border)}
+.btn-primary:hover{background:#366fc0;transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--neo-border)}
+.btn-primary:active{transform:translate(2px,2px);box-shadow:none}
+.btn-secondary{border-color:var(--neo-border);background:#fff}
+.btn-ghost{border-color:transparent}
+input,textarea,select{border:2px solid var(--line-strong);border-radius:11px;min-height:44px;background:#fff;color:var(--text)}
+:where(button,a,input,textarea,select):focus-visible{outline:3px solid #2865b9;outline-offset:3px;box-shadow:none}
+label{color:var(--text)}
+.auth-page-centered{background:#f2f8ff;min-height:100svh;padding-bottom:42px}
+.auth-centered-shell{max-width:750px}
+.auth-centered-brand{margin-bottom:30px}
+.auth-centered-hero h1{font-weight:850;letter-spacing:-.075em;line-height:1.07;font-size:clamp(42px,6.5vw,68px)}
+.auth-centered-hero h1 span{color:#356fbc}
+.auth-kicker{color:#285ea9;font-weight:760;letter-spacing:.06em}
+.auth-lead{max-width:510px;margin-inline:auto}
+.auth-feature-row{border:2px solid var(--neo-border);border-radius:12px;box-shadow:3px 3px 0 #bdd4ec}
+.auth-card-centered{border:2px solid var(--neo-border);border-top:6px solid var(--blue);border-radius:17px;box-shadow:6px 6px 0 #93b7dd;max-width:520px}
+.auth-card-centered .form-stack label{font-weight:700}
+.auth-card-centered input{min-height:47px}
+.auth-card-centered .btn-primary{min-height:46px}
+.auth-switch{font-size:12px}
+.trip-grid{gap:16px}
+.trip-card{border:2px solid var(--neo-border);border-radius:15px;box-shadow:none;overflow:hidden}
+.trip-card:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--neo-border)}
+.trip-title{letter-spacing:-.035em}
+.trip-hero{border:2px solid var(--neo-border);border-radius:17px;background:#cde3fd}
+.metrics-inline{border-top:2px solid var(--neo-border);border-bottom:2px solid var(--neo-border)}
+.metric-pill{border-right-color:var(--line-strong)}
+.section-tabs{border:2px solid var(--neo-border);border-radius:13px}
+:is(.summary-card,.booking-card,.day-block,.form-panel,.info-panel,.person-card,.join-card){border:2px solid var(--neo-border);border-radius:14px}
+.table-wrap{max-width:100%;overflow-x:auto;border:2px solid var(--neo-border);border-radius:13px}
+.table-wrap table{min-width:max-content}
+.alert{border-width:2px;border-radius:12px}
+.empty-state{border:2px dashed var(--line-strong);border-radius:15px}
+.footer{border-top:2px solid var(--neo-border);color:var(--muted)}
+.error-state{border:2px solid var(--neo-border)}
+.error-number{background:#ffdf96;color:#173052}
+@media(max-width:760px){.auth-card-centered{box-shadow:4px 4px 0 #93b7dd}.auth-centered-hero h1{font-size:clamp(38px,9vw,54px)}.auth-centered-hero{padding-inline:2px}.topbar{gap:7px}.page-heading{flex-wrap:wrap}.trip-card:hover{transform:none;box-shadow:none}}
+@media(max-width:390px){.container{width:calc(100% - 24px)}.auth-feature-row{flex-wrap:wrap;width:100%;justify-content:center}.btn{min-height:44px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+
