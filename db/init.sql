@@ -176,3 +176,14 @@ CREATE TABLE IF NOT EXISTS password_resets (
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS password_resets_user ON password_resets(user_id);
+
+-- New registrations only: legacy users remain unaffected.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS activation_required BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS email_activations (
+ token_hash CHAR(64) PRIMARY KEY,
+ user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ expires_at TIMESTAMPTZ NOT NULL,
+ used_at TIMESTAMPTZ,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS email_activations_user_created ON email_activations(user_id,created_at DESC);
