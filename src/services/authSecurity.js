@@ -11,7 +11,10 @@ export function sameOrigin(req) {
     const expected = new URL(process.env.APP_URL).origin;
     // An explicit Origin always takes precedence, including "null".
     if (req.headers.origin !== undefined) return req.headers.origin === expected;
-    return new URL(req.headers.referer).origin === expected && req.headers['sec-fetch-site'] !== 'cross-site';
+    if (req.headers.referer) return new URL(req.headers.referer).origin === expected && req.headers['sec-fetch-site'] !== 'cross-site';
+    // Safari and iOS embedded browsers can omit both Origin and Referer.
+    // Require Fetch Metadata and a server-issued session CSRF token in that case.
+    return req.headers['sec-fetch-site'] === 'same-origin';
   } catch { return false; }
 }
 export function validCSRF(req) { return sameOrigin(req) && safeEqual(req.body.csrf, req.session.loginCSRF); }
