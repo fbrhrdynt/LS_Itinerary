@@ -86,7 +86,7 @@ router.post('/resend-activation',activationLimiter,guestOnly,csrfGuard,async(req
 });
 router.get('/verify-email',guestOnly,(req,res,next)=>{
  res.set('Referrer-Policy','no-referrer');
- return formPage(req,res,'auth/verify','Aktivasi Email').catch(next);
+ const token=typeof req.query.token==='string' && /^[A-Za-z0-9_-]{43}$/.test(req.query.token) ? req.query.token : '';\n return formPage(req,res,'auth/verify','Aktivasi Email',{activationToken:token}).catch(next);
 });
 router.post('/verify-email',activationLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
  const token=typeof req.body.token==='string'?req.body.token:'';
