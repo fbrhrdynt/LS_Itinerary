@@ -75,7 +75,7 @@ async function deliver({ to, subject, text, html }) {
 }
 
 export async function sendActivation(email, token) {
-  const link = `${new URL(process.env.APP_URL).origin}/verify-email#${token}`;
+  const link = `${new URL(process.env.APP_URL).origin}/verify-email?token=${encodeURIComponent(token)}`;
   await deliver({
     to: email,
     subject: 'Aktifkan akun Itinerary Anda',
