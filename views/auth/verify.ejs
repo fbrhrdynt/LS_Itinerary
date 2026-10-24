@@ -1,0 +1,13 @@
+<%- include('../partials/head') %>
+<main class="auth-page-centered"><div class="auth-centered-shell">
+<header class="auth-centered-brand"><a class="brand wordmark" href="/login"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></a></header>
+<section class="auth-card-centered"><div class="auth-card-head"><h1>Aktivasi akun</h1><p class="muted">Konfirmasi email untuk mengaktifkan akun Itinerary.</p></div>
+<%- include('../partials/flash') %>
+<p id="activation-status" role="status">Buka halaman ini dari tautan aktivasi di email Anda.</p>
+<form method="post" action="/verify-email" class="form-stack" id="activation-form" style="display:none">
+<input type="hidden" name="csrf" value="<%= loginCSRF %>">
+<input type="hidden" name="token" id="activation-token">
+<button type="submit" class="btn btn-primary">Aktifkan akun saya</button>
+</form><noscript>Aktifkan JavaScript untuk menggunakan tautan aktivasi dengan aman.</noscript>
+<p class="auth-switch"><a href="/resend-activation">Minta tautan baru</a> · <a href="/login">Masuk</a></p>
+</section></div></main><%- include('../partials/footer') %>
