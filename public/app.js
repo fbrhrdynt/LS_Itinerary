@@ -66,7 +66,8 @@ window.addEventListener('pageshow', () => {
   });
 });
 const resetToken = document.getElementById('reset-token');
-if (resetToken) {
+function processResetLink() {
+  if (!resetToken) return;
   const token = location.hash.slice(1);
   if (/^[A-Za-z0-9_-]{43}$/.test(token)) {
     resetToken.value = token;
@@ -75,6 +76,8 @@ if (resetToken) {
   }
   history.replaceState(null, '', location.pathname);
 }
+processResetLink();
+window.addEventListener('hashchange', processResetLink);
 
 const passwordConfirmation = document.querySelector('#reset-form [name="confirm_password"]');
 if (passwordConfirmation) {
