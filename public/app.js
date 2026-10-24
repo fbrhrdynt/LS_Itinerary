@@ -28,6 +28,7 @@ document.addEventListener('click', async (event) => {
 });
 
 document.addEventListener('submit', (event) => {
+  if (event.defaultPrevented) return;
   const form = event.target.closest('form');
   if (!form) return;
 
@@ -54,4 +55,34 @@ if (tabs.length && 'IntersectionObserver' in window) {
     tabs.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${active.target.id}`));
   }, { rootMargin: '-120px 0px -65% 0px', threshold: [0, .2, .5] });
   sections.forEach(section => observer.observe(section));
+}
+
+// Restore controls when Safari restores a page from its back/forward cache.
+window.addEventListener('pageshow', () => {
+  document.querySelectorAll('button[data-original-text]').forEach(button => {
+    button.textContent = button.dataset.originalText;
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+  });
+});
+const resetToken = document.getElementById('reset-token');
+if (resetToken) {
+  const token = location.hash.slice(1);
+  if (/^[A-Za-z0-9_-]{43}$/.test(token)) {
+    resetToken.value = token;
+    document.getElementById('reset-form').style.removeProperty('display');
+    document.getElementById('reset-status').textContent = 'Pilih password minimal 8 karakter. Tautan hanya dapat digunakan satu kali.';
+  }
+  history.replaceState(null, '', location.pathname);
+}
+
+const passwordConfirmation = document.querySelector('#reset-form [name="confirm_password"]');
+if (passwordConfirmation) {
+  const passwordInput = document.querySelector('#reset-form [name="password"]');
+  const validatePasswords = () => {
+    passwordInput.setCustomValidity(new TextEncoder().encode(passwordInput.value).length > 72 ? 'Password maksimal 72 byte.' : '');
+    passwordConfirmation.setCustomValidity(passwordConfirmation.value !== passwordInput.value ? 'Konfirmasi password harus sama.' : '');
+  };
+  passwordInput.addEventListener('input', validatePasswords);
+  passwordConfirmation.addEventListener('input', validatePasswords);
 }

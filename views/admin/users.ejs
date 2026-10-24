@@ -10,11 +10,11 @@
 
   <details class="admin-create panel">
     <summary>Tambah user <span>＋</span></summary>
-    <form action="/admin/users" method="post" class="form-grid five admin-create-form">
+    <form action="/admin/users" method="post" class="form-grid five admin-create-form"><input type="hidden" name="csrf" value="<%= loginCSRF %>">
       <label>Nama<input name="name" required minlength="2" placeholder="Nama lengkap"></label>
       <label>Email<input type="email" name="email" required placeholder="email@example.com"></label>
       <label>Password<input type="password" name="password" required minlength="8" placeholder="Minimal 8 karakter"></label>
-      <label>Level<select name="role"><option>User</option><option>Administrator</option></select></label>
+      <p>Akun baru mendapat level User. Hak Administrator memerlukan kepemilikan email terverifikasi.</p>
       <label>Status<select name="status"><option value="active">Aktif</option><option value="hold">Hold</option><option value="blocked">Diblokir</option></select></label>
       <div class="span-5 form-actions"><button class="btn btn-primary" type="submit">Tambah user</button></div>
     </form>

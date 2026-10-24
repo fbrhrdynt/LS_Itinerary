@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<main class="auth-page-centered"><div class="auth-centered-shell">
+<header class="auth-centered-brand"><a class="brand wordmark" href="/login"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></a></header>
+<section class="auth-card-centered"><div class="auth-card-head"><h1>Lupa Password?</h1></div>
+<%- include('../partials/flash') %>
+<p>Masukkan email akun Anda untuk menerima tautan pemulihan yang berlaku 30 menit.</p>
+<% if (!smtpReady) { %><p role="alert">Pengiriman email belum tersedia. Hubungi pengelola untuk konfigurasi SMTP.</p><% } %>
+<form method="post" action="/forgot-password" class="form-stack"><input type="hidden" name="csrf" value="<%= loginCSRF %>">
+<label>Email<input type="email" name="email" required autocomplete="email" maxlength="255"></label>
+<button type="submit" class="btn btn-primary" <%= smtpReady ? '' : 'disabled' %>>Kirim tautan pemulihan</button></form>
+<p class="auth-switch"><a href="/login">Masuk</a> · <a href="/register">Daftar Akun</a></p>
+</section></div></main><%- include('../partials/footer') %>

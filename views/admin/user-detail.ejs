@@ -10,7 +10,7 @@
     <span class="status-text status-<%= user.status %>"><%= user.status === 'active' ? 'Aktif' : user.status === 'hold' ? 'Hold' : 'Diblokir' %></span>
   </section>
 
-  <form action="/admin/users/<%= user.id %>" method="post" class="panel form-panel admin-user-form">
+  <form action="/admin/users/<%= user.id %>" method="post" class="panel form-panel admin-user-form"><input type="hidden" name="csrf" value="<%= loginCSRF %>">
     <div class="form-grid two">
       <label>Nama<input name="name" value="<%= user.name %>" required minlength="2"></label>
       <label>Email<input type="email" name="email" value="<%= user.email %>" required></label>
@@ -41,7 +41,7 @@
   <% } %>
 
   <% if (Number(user.id) !== Number(currentUser.id)) { %>
-  <details class="danger-zone admin-danger"><summary>Hapus user</summary><div><p>Menghapus user juga menghapus trip yang dimilikinya. Gunakan Hold atau Blokir jika datanya masih perlu disimpan.</p><form action="/admin/users/<%= user.id %>/delete" method="post" data-confirm="Hapus user ini beserta trip yang dimilikinya? Tindakan ini tidak dapat dibatalkan."><button class="btn btn-danger" type="submit">Hapus user</button></form></div></details>
+  <details class="danger-zone admin-danger"><summary>Hapus user</summary><div><p>Menghapus user juga menghapus trip yang dimilikinya. Gunakan Hold atau Blokir jika datanya masih perlu disimpan.</p><form action="/admin/users/<%= user.id %>/delete" method="post" data-confirm="Hapus user ini beserta trip yang dimilikinya? Tindakan ini tidak dapat dibatalkan."><input type="hidden" name="csrf" value="<%= loginCSRF %>"><button class="btn btn-danger" type="submit">Hapus user</button></form></div></details>
   <% } %>
 </main>
 <%- include('../partials/footer') %>

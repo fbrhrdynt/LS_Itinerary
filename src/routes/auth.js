@@ -1,89 +1,187 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from 'express-rate-limit';
-import { query } from '../database.js';
+import { pool, query } from '../database.js';
 import { flash, safeReturnTo } from '../utils.js';
+import { csrfGuard, sameOrigin, isAdmin, normalizeEmail, validEmail, validPassword, tokenHash } from '../services/authSecurity.js';
+import { smtpConfigured, sendReset } from '../services/mailer.js';
 import { guestOnly } from '../middleware.js';
+import { configured, startFlow, validFlow, exchangeCode, randomToken, safeEqual } from '../services/oidc.js';
 
 const router = express.Router();
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
+const save = req => new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
 
-router.get('/login', guestOnly, (req, res) => res.render('auth/login', { title: 'Masuk' }));
-router.get('/register', guestOnly, (req, res) => res.render('auth/register', { title: 'Buat akun' }));
+async function completeLogin(req, res, user) {
+  if (user.status !== 'active') throw new Error('Account unavailable');
+  if (!isAdmin(user)) user.role = 'User';
+  const returnTo = req.session.returnTo;
+  await new Promise((resolve, reject) => req.session.regenerate(err => err ? reject(err) : resolve()));
+  await query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
+  req.session.user = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status, auth_version:user.auth_version, email_verified_at:user.email_verified_at, verified_email:user.verified_email };
+  let destination = safeReturnTo(returnTo, user.role === 'Administrator' ? '/admin' : '/dashboard');
+  if (user.role !== 'Administrator' && destination.startsWith('/admin')) destination = '/dashboard';
+  await save(req);
+  res.redirect(destination);
+}
 
-router.post('/register', authLimiter, guestOnly, async (req, res, next) => {
+router.get('/login', guestOnly, async (req, res, next) => {
   try {
-    const name = String(req.body.name || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.password || '');
-    if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) {
-      flash(req, 'danger', 'Isi nama dan email dengan benar. Password minimal 8 karakter.');
-      return res.redirect('/register');
-    }
+    res.set('Cache-Control', 'no-store');
+    // Keep other open/restored login forms valid for this anonymous session.
+    if (!req.session.loginCSRF) req.session.loginCSRF = randomToken();
+    await save(req);
+    res.render('auth/login', { title: 'Masuk', ssoEnabled: configured(), febroSSO:process.env.FEBRO_SSO_ENABLED==='true', loginCSRF:req.session.loginCSRF });
+  } catch (err) { next(err); }
+});
+async function formPage(req, res, view, title, extra={}) {
+  res.set('Cache-Control','no-store');
+  if (!req.session.loginCSRF) req.session.loginCSRF=randomToken();
+  await save(req);
+  res.render(view,{title,loginCSRF:req.session.loginCSRF,...extra});
+}
+router.get('/register', guestOnly, (req,res,next)=>formPage(req,res,'auth/register','Daftar Akun').catch(next));
+router.post('/register',authLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
+ try {
+  const name=String(req.body.name||'').trim(), email=normalizeEmail(req.body.email), password=req.body.password;
+  if(name.length<2 || name.length>120 || !validEmail(email) || !validPassword(password)) {
+   flash(req,'danger','Isi nama (2–120 karakter), email yang valid, dan password minimal 8 karakter (maksimal 72 byte).');
+   await save(req); return res.redirect(303,'/register');
+  }
+  const hash=await bcrypt.hash(password,12);
+  await query("INSERT INTO users(name,email,password_hash,role,status) VALUES($1,$2,$3,'User','active')",[name,email,hash]);
+  flash(req,'success','Akun berhasil dibuat. Silakan masuk.'); await save(req); res.redirect(303,'/login');
+ } catch(err) {
+  if(err.code==='23505'){flash(req,'danger','Email sudah terdaftar. Silakan masuk atau gunakan Lupa Password.');await save(req);return res.redirect(303,'/register');} next(err);
+ }
+});
+const resetLimiter=rateLimit({windowMs:30*60*1000,limit:5,standardHeaders:'draft-8',legacyHeaders:false,message:'Terlalu banyak permintaan. Coba lagi dalam 30 menit.'});
+router.get('/forgot-password',guestOnly,(req,res,next)=>formPage(req,res,'auth/forgot','Lupa Password?',{smtpReady:smtpConfigured()}).catch(next));
+router.post('/forgot-password',resetLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
+ try {
+  if(!smtpConfigured()){flash(req,'danger','Pengiriman email belum tersedia. Hubungi pengelola untuk konfigurasi SMTP.');await save(req);return res.redirect(303,'/forgot-password');}
+  const email=normalizeEmail(req.body.email);
+  if(!validEmail(email)){flash(req,'danger','Masukkan alamat email yang valid.');await save(req);return res.redirect(303,'/forgot-password');}
+  const user=(await query("SELECT * FROM users WHERE lower(trim(email))=$1 AND status='active'",[email])).rows[0];
+  if(user?.password_hash){
+   const token=randomToken(), hash=tokenHash(token);
+   // Per-account throttling, independent of client IP; never reveals account existence.
+   const result=await query(`INSERT INTO password_resets(token_hash,user_id,expires_at,auth_version)
+    SELECT $1,$2,NOW()+INTERVAL '30 minutes',$3 WHERE NOT EXISTS
+    (SELECT 1 FROM password_resets WHERE user_id=$2 AND created_at>NOW()-INTERVAL '2 minutes') RETURNING token_hash`,[hash,user.id,user.auth_version]);
+   if(result.rowCount)try{await sendReset(user.email,token);}catch{await query('DELETE FROM password_resets WHERE token_hash=$1',[hash]);console.warn('password_reset_delivery_failed');}
+  }
+  flash(req,'success','Jika email terdaftar dan dapat menggunakan password, tautan pemulihan akan dikirim. Periksa kotak masuk dan spam.');await save(req);res.redirect(303,'/forgot-password');
+ }catch(err){next(err);}
+});
+router.get('/reset-password',guestOnly,(req,res,next)=>{res.set('Referrer-Policy','no-referrer');return formPage(req,res,'auth/reset','Atur ulang password').catch(next);});
+router.post('/reset-password',authLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
+ const token=typeof req.body.token==='string'?req.body.token:'';
+ if(!validPassword(req.body.password)||req.body.password!==req.body.confirm_password){flash(req,'danger','Password minimal 8 karakter (maksimal 72 byte) dan konfirmasi harus sama.');await save(req);return res.redirect(303,'/reset-password');}
+ if(!/^[A-Za-z0-9_-]{43}$/.test(token)){flash(req,'danger','Tautan tidak valid atau kedaluwarsa. Minta tautan baru.');await save(req);return res.redirect(303,'/forgot-password');}
+ const client=await pool.connect();
+ try {
+  const hash=await bcrypt.hash(req.body.password,12);
+  await client.query('BEGIN');
+  const found=await client.query(`SELECT u.id FROM users u JOIN password_resets r ON r.user_id=u.id
+   WHERE r.token_hash=$1 AND r.used_at IS NULL AND r.expires_at>NOW() AND r.auth_version=u.auth_version AND u.status='active' FOR UPDATE OF u,r`,[tokenHash(token)]);
+  if(!found.rowCount){await client.query('ROLLBACK');flash(req,'danger','Tautan tidak valid atau kedaluwarsa. Minta tautan baru.');await save(req);return res.redirect(303,'/forgot-password');}
+  const id=found.rows[0].id;
+  await client.query('UPDATE users SET password_hash=$1,email_verified_at=NOW(),verified_email=email,updated_at=NOW() WHERE id=$2',[hash,id]);
+  await client.query('UPDATE password_resets SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[id]);
+  await client.query(`DELETE FROM session WHERE sess->'user'->>'id'=$1`,[String(id)]);
+  await client.query('COMMIT');
+  await new Promise((resolve,reject)=>req.session.regenerate(err=>err?reject(err):resolve()));
+  flash(req,'success','Password berhasil diperbarui. Semua sesi sebelumnya telah berakhir. Silakan masuk.');await save(req);res.redirect(303,'/login');
+ }catch(err){await client.query('ROLLBACK');next(err);}finally{client.release();}
+});
+router.post('/login',authLimiter,guestOnly,csrfGuard,async(req,res,next)=>{try{
+ const user=(await query('SELECT * FROM users WHERE LOWER(email)=$1',[String(req.body.email||'').trim().toLowerCase()])).rows[0];
+ if(!user||user.status!=='active'||!user.password_hash||!await bcrypt.compare(String(req.body.password||''),user.password_hash)){flash(req,'danger','Email atau password tidak valid.');await save(req);return res.redirect('/login');}
+ await completeLogin(req,res,user);
+}catch(e){next(e);}});
 
-    const existing = await query('SELECT id FROM users WHERE email=$1 LIMIT 1', [email]);
-    if (existing.rowCount) {
-      flash(req, 'danger', 'Email sudah terdaftar. Silakan login.');
+router.get(['/auth/febro', '/auth/google'], authLimiter, guestOnly, async (req, res, next) => {
+  try {
+    if (!configured()) {
+      flash(req, 'danger', 'Login belum dikonfigurasi. Hubungi Administrator.');
+      await save(req);
       return res.redirect('/login');
     }
-
-    const hash = await bcrypt.hash(password, 12);
-    const result = await query(
-      `INSERT INTO users(name,email,password_hash,role,status)
-       VALUES($1,$2,$3,'User','active')
-       RETURNING id,name,email,role,status`,
-      [name, email, hash]
-    );
-
-    req.session.user = result.rows[0];
-    const redirectTo = safeReturnTo(req.session.returnTo, '/dashboard');
-    delete req.session.returnTo;
-    res.redirect(redirectTo);
+    const { flow, url } = startFlow(req.path === '/auth/google');
+    req.session.oidcFlow = flow;
+    delete req.session.pendingIdentity;
+    await save(req);
+    res.set('Cache-Control', 'no-store').redirect(url);
   } catch (err) { next(err); }
 });
 
-router.post('/login', authLimiter, guestOnly, async (req, res, next) => {
+router.get('/auth/febro/callback', authLimiter, guestOnly, async (req, res, next) => {
   try {
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.password || '');
-    const result = await query(
-      'SELECT id,name,email,password_hash,role,status FROM users WHERE email=$1 LIMIT 1',
-      [email]
-    );
+    const flow = req.session.oidcFlow;
+    delete req.session.oidcFlow;
+    await save(req);
+    if (!validFlow(flow, req.query.state) || req.query.error || typeof req.query.code !== 'string') throw new Error('Invalid callback');
+    const identity = await exchangeCode(req.query.code, flow);
+    const client = await pool.connect();
+    let user;
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [identity.email]);
+      const result = await client.query('SELECT * FROM users WHERE febro_sub=$1 OR LOWER(email)=$2 FOR UPDATE', [identity.sub, identity.email]);
+      const linked = result.rows.find(row => row.febro_sub === identity.sub);
+      const existing = result.rows.find(row => row.email.toLowerCase() === identity.email);
+      if (linked) {
+        if (linked.status !== 'active') throw new Error('Account unavailable');
+        user = linked;
+        if (normalizeEmail(linked.email) === identity.email) user = (await client.query('UPDATE users SET email_verified_at=NOW(),verified_email=email WHERE id=$1 RETURNING *',[linked.id])).rows[0];
+        else user = (await client.query("UPDATE users SET role='User',email_verified_at=NULL,verified_email=NULL WHERE id=$1 RETURNING *",[linked.id])).rows[0];
+      } else if (existing) {
+        if (existing.status !== 'active' || existing.febro_sub) throw new Error('Account unavailable');
+        req.session.pendingIdentity = { ...identity, userId: existing.id, csrf: randomToken(), expires: Date.now() + 600000 };
+      } else {
+        user = (await client.query(`INSERT INTO users(name,email,password_hash,febro_sub,role,status,email_verified_at,verified_email)
+          VALUES($1,$2,NULL,$3,'User','active',NOW(),$2) RETURNING *`, [identity.name, identity.email, identity.sub])).rows[0];
+      }
+      await client.query('COMMIT');
+    } catch (err) { await client.query('ROLLBACK'); throw err; }
+    finally { client.release(); }
+    if (user) return await completeLogin(req, res, user);
+    await save(req);
+    res.redirect('/auth/link');
+  } catch (err) {
+    delete req.session.pendingIdentity;
+    console.error('SSO login failed:', err.code || err.name);
+    flash(req, 'danger', 'Login tidak berhasil. Akun mungkin dibatasi atau sesi sudah kedaluwarsa. Coba masuk kembali; hubungi Administrator jika masalah berlanjut.');
+    try { await save(req); res.redirect('/login'); } catch (error) { next(error); }
+  }
+});
+
+router.get('/auth/link', guestOnly, (req, res) => {
+  const pending = req.session.pendingIdentity;
+  if (!pending || pending.expires <= Date.now()) return res.redirect('/login');
+  res.set('Cache-Control', 'no-store').render('auth/link', { title: 'Hubungkan akun', email: pending.email, csrf: pending.csrf });
+});
+router.post('/auth/link', authLimiter, guestOnly, async (req, res, next) => {
+  try {
+    const pending = req.session.pendingIdentity;
+    if (!pending || pending.expires <= Date.now() || !sameOrigin(req) || !safeEqual(req.body.csrf, pending.csrf)) return res.redirect('/login');
+    const result = await query('SELECT * FROM users WHERE id=$1', [pending.userId]);
     const user = result.rows[0];
-
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      flash(req, 'danger', 'Email atau password salah.');
-      return res.redirect('/login');
+    if (!user || user.status !== 'active' || user.email.toLowerCase() !== pending.email || !user.password_hash
+      || !(await bcrypt.compare(String(req.body.password || ''), user.password_hash))) {
+      flash(req, 'danger', 'Password akun lama tidak cocok atau akun tidak aktif. Coba lagi atau hubungi Administrator.');
+      await save(req);
+      return res.redirect('/auth/link');
     }
-
-    if (user.status !== 'active') {
-      flash(req, 'danger', user.status === 'hold'
-        ? 'Akun sedang di-hold oleh Administrator.'
-        : 'Akun diblokir. Hubungi Administrator.');
-      return res.redirect('/login');
-    }
-
-    await query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-    };
-
-    const returnTo = req.session.returnTo;
-    delete req.session.returnTo;
-    const defaultDestination = user.role === 'Administrator' ? '/admin' : '/dashboard';
-    let destination = safeReturnTo(returnTo, defaultDestination);
-    if (user.role !== 'Administrator' && destination.startsWith('/admin')) destination = '/dashboard';
-    res.redirect(destination);
+    const linked = await query(`UPDATE users SET febro_sub=$1, email_verified_at=NOW(),verified_email=email,updated_at=NOW()
+      WHERE id=$2 AND febro_sub IS NULL AND status='active' RETURNING *`, [pending.sub, user.id]);
+    if (!linked.rowCount) throw new Error('Account already linked');
+    await completeLogin(req, res, linked.rows[0]);
   } catch (err) { next(err); }
 });
 
 router.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/login'));
 });
-
 export default router;

@@ -19,9 +19,10 @@
       <div class="auth-card-head"><h2 id="register-title">Buat akun</h2><p class="muted">Simpan trip dan undang peserta saat diperlukan.</p></div>
       <%- include('../partials/flash') %>
       <form action="/register" method="post" class="form-stack">
+        <input type="hidden" name="csrf" value="<%= loginCSRF %>">
         <label>Nama lengkap<input type="text" name="name" autocomplete="name" required minlength="2" placeholder="Nama Anda"></label>
         <label>Email<input type="email" name="email" autocomplete="email" required placeholder="nama@email.com"></label>
-        <label>Password<input type="password" name="password" autocomplete="new-password" required minlength="8" placeholder="Minimal 8 karakter"></label>
+        <label>Password<input type="password" name="password" maxlength="72" autocomplete="new-password" required minlength="8" placeholder="Minimal 8 karakter"></label>
         <button class="btn btn-primary btn-block" type="submit">Buat akun</button>
       </form>
       <p class="auth-switch">Sudah punya akun? <a href="/login">Masuk</a></p>

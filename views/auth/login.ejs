@@ -18,12 +18,16 @@
     <section class="auth-card-centered" aria-labelledby="login-title">
       <div class="auth-card-head"><h2 id="login-title">Masuk</h2><p class="muted">Lanjutkan trip yang sedang Anda atur.</p></div>
       <%- include('../partials/flash') %>
-      <form action="/login" method="post" class="form-stack">
-        <label>Email<input type="email" name="email" autocomplete="email" required placeholder="nama@email.com"></label>
-        <label>Password<input type="password" name="password" autocomplete="current-password" required placeholder="••••••••"></label>
-        <button class="btn btn-primary btn-block" type="submit">Masuk</button>
-      </form>
-      <p class="auth-switch">Belum punya akun? <a href="/register">Buat akun</a></p>
+      <form method="post" action="/login" class="form-stack"><input type="hidden" name="csrf" value="<%= loginCSRF %>"><label>Email<input name="email" type="email" required autocomplete="username"></label><label>Password<input name="password" type="password" required maxlength="128" autocomplete="current-password"></label><button type="submit" class="btn btn-primary">Masuk dengan password</button></form>
+      <p class="auth-switch"><a href="/register">Daftar Akun</a> · <a href="/forgot-password">Lupa Password?</a></p>
+      <% if (ssoEnabled) { %>
+        <div class="form-stack">
+          <a class="btn btn-primary btn-block" href="/auth/febro">Masuk dengan Febro Account</a>
+          <a class="btn btn-secondary btn-block" href="/auth/google">Masuk dengan Google</a>
+        </div>
+        <p class="auth-switch">Kedua pilihan menggunakan Febro Account. Akun baru dibuat saat pertama masuk.</p>
+
+      <% } %>
     </section>
   </div>
 </main>

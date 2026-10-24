@@ -1,11 +1,21 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import { isAdmin, csrfGuard } from '../services/authSecurity.js';
 import { query } from '../database.js';
 import { requireAdmin, requireAuth } from '../middleware.js';
+import { randomToken } from '../services/oidc.js';
 import { flash } from '../utils.js';
 
 const router = express.Router();
-router.use('/admin', requireAuth, requireAdmin);
+router.use('/admin', requireAuth, requireAdmin, async (req,res,next)=> {
+ try {
+  if (!req.session.loginCSRF) req.session.loginCSRF=randomToken();
+  res.locals.loginCSRF=req.session.loginCSRF;
+  if (!['GET','HEAD','OPTIONS'].includes(req.method)) return csrfGuard(req,res,next);
+  await new Promise((resolve,reject)=>req.session.save(err=>err?reject(err):resolve()));
+  next();
+ } catch(err){next(err);}
+});
 
 const ROLES = new Set(['Administrator', 'User']);
 const STATUSES = new Set(['active', 'hold', 'blocked']);
@@ -19,7 +29,7 @@ async function audit(req, action, targetType, targetId = null, details = '') {
 }
 
 async function ensureAdminCanChange(targetId, nextRole, nextStatus, action) {
-  const targetResult = await query('SELECT id,role,status FROM users WHERE id=$1 LIMIT 1', [targetId]);
+  const targetResult = await query('SELECT * FROM users WHERE id=$1 LIMIT 1', [targetId]);
   const target = targetResult.rows[0];
   if (!target) return { ok: false, status: 404, message: 'User tidak ditemukan.' };
 
@@ -115,7 +125,7 @@ router.post('/admin/users', async (req, res, next) => {
     const name = String(req.body.name || '').trim();
     const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
-    const role = ROLES.has(req.body.role) ? req.body.role : 'User';
+    const role = 'User';
     const status = STATUSES.has(req.body.status) ? req.body.status : 'active';
 
     if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) {
@@ -197,6 +207,10 @@ router.post('/admin/users/:id', async (req, res, next) => {
     if (!allowed.ok) {
       flash(req, 'danger', allowed.message);
       return res.redirect(`/admin/users/${targetId}`);
+    }
+
+    if (role === 'Administrator' && (!isAdmin({...allowed.target, role}) || email !== allowed.target.email.trim().toLowerCase())) {
+      flash(req,'danger','Hak Administrator memerlukan email yang diizinkan dan kepemilikan terverifikasi.'); return res.redirect(`/admin/users/${targetId}`);
     }
 
     const duplicate = await query('SELECT id FROM users WHERE email=$1 AND id<>$2 LIMIT 1', [email, targetId]);

@@ -1,3 +1,4 @@
+import { isAdmin } from './services/authSecurity.js';
 import { query } from './database.js';
 
 export async function requireAuth(req, res, next) {
@@ -8,12 +9,12 @@ export async function requireAuth(req, res, next) {
 
   try {
     const result = await query(
-      'SELECT id,name,email,role,status FROM users WHERE id=$1 LIMIT 1',
+      'SELECT id,name,email,role,status,auth_version,email_verified_at,verified_email FROM users WHERE id=$1 LIMIT 1',
       [req.session.user.id]
     );
     const user = result.rows[0];
 
-    if (!user || user.status !== 'active') {
+    if (!user || user.status !== 'active' || req.session.user.auth_version !== user.auth_version) {
       req.session.user = null;
       req.session.flash = {
         type: 'danger',
@@ -24,6 +25,7 @@ export async function requireAuth(req, res, next) {
       return req.session.save(() => res.redirect('/login'));
     }
 
+    if (!isAdmin(user)) user.role='User';
     req.session.user = user;
     res.locals.currentUser = user;
     res.locals.isAdmin = user.role === 'Administrator';
@@ -34,7 +36,7 @@ export async function requireAuth(req, res, next) {
 }
 
 export function requireAdmin(req, res, next) {
-  if (req.session.user?.role !== 'Administrator') {
+  if (!isAdmin(req.session.user)) {
     return res.status(403).render('error', {
       title: 'Akses ditolak',
       status: 403,

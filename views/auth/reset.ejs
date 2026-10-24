@@ -1,0 +1,14 @@
+<%- include('../partials/head') %>
+<main class="auth-page-centered"><div class="auth-centered-shell">
+<header class="auth-centered-brand"><a class="brand wordmark" href="/login"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></a></header>
+<section class="auth-card-centered"><div class="auth-card-head"><h1>Atur ulang password</h1></div>
+<%- include('../partials/flash') %>
+<p id="reset-status" role="status">Buka halaman ini melalui tautan dari email pemulihan.</p>
+<form method="post" action="/reset-password" class="form-stack" id="reset-form" style="display:none">
+<input type="hidden" name="csrf" value="<%= loginCSRF %>"><input type="hidden" name="token" id="reset-token">
+<label>Password baru<input name="password" type="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>
+<label>Ulangi password baru<input name="confirm_password" type="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>
+<button type="submit" class="btn btn-primary">Simpan password baru</button></form><noscript>Aktifkan JavaScript untuk membuka tautan pemulihan dengan aman.</noscript>
+<p><a href="/forgot-password">Minta tautan baru</a></p>
+<p class="auth-switch"><a href="/login">Masuk</a> · <a href="/register">Daftar Akun</a></p>
+</section></div></main><%- include('../partials/footer') %>
