@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-export const smtpConfigured = () => Boolean((process.env.SMTP_URL || process.env.SMTP_HOST) && (process.env.SMTP_FROM || process.env.MAIL_FROM));
+export const smtpConfigured = () => Boolean((process.env.SMTP_URL || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)) && (process.env.SMTP_FROM || process.env.MAIL_FROM));
 export async function sendReset(email, token) {
   if (!smtpConfigured()) throw new Error('SMTP_NOT_CONFIGURED');
   const transport = nodemailer.createTransport(process.env.SMTP_URL || {
@@ -10,5 +10,6 @@ export async function sendReset(email, token) {
   });
   // Fragment is never sent to HTTP servers or proxy access logs.
   const link = `${new URL(process.env.APP_URL).origin}/reset-password#${token}`;
-  await transport.sendMail({from:process.env.SMTP_FROM || process.env.MAIL_FROM,to:email,subject:'Atur ulang password Itinerary',text:`Buka tautan ini untuk mengatur ulang password Anda (berlaku 30 menit, satu kali pakai):\n${link}\n\nAbaikan email ini jika Anda tidak meminta perubahan.`});
+  const ttl = Math.max(5,Math.min(120,Number(process.env.PASSWORD_RESET_TTL_MINUTES)||30));
+  await transport.sendMail({from:process.env.SMTP_FROM || process.env.MAIL_FROM,to:email,subject:'Atur ulang password Itinerary',replyTo:'febroherdyanto98@gmail.com',text:`Buka tautan ini untuk mengatur ulang password Anda (berlaku ${ttl} menit, satu kali pakai):\n${link}\n\nAbaikan email ini jika Anda tidak meminta perubahan.`});
 }
