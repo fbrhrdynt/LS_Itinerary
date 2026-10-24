@@ -31,11 +31,12 @@ router.get('/login', guestOnly, async (req, res, next) => {
     // Keep other open/restored login forms valid for this anonymous session.
     if (!req.session.loginCSRF) req.session.loginCSRF = randomToken();
     await save(req);
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private').set('Pragma','no-cache');
     res.render('auth/login', { title: 'Masuk', ssoEnabled: configured(), febroSSO:process.env.FEBRO_SSO_ENABLED==='true', loginCSRF:req.session.loginCSRF });
   } catch (err) { next(err); }
 });
 async function formPage(req, res, view, title, extra={}) {
-  res.set('Cache-Control','no-store');
+  res.set('Cache-Control','no-store, no-cache, must-revalidate, private').set('Pragma','no-cache');
   if (!req.session.loginCSRF) req.session.loginCSRF=randomToken();
   await save(req);
   res.render(view,{title,loginCSRF:req.session.loginCSRF,...extra});
@@ -56,7 +57,7 @@ router.post('/register',authLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
  }
 });
 const resetLimiter=rateLimit({windowMs:30*60*1000,limit:5,standardHeaders:'draft-8',legacyHeaders:false,message:'Terlalu banyak permintaan. Coba lagi dalam 30 menit.'});
-router.get('/forgot-password',guestOnly,(req,res,next)=>formPage(req,res,'auth/forgot','Lupa Password?',{smtpReady:smtpConfigured()}).catch(next));
+router.get('/forgot-password',guestOnly,(req,res,next)=>formPage(req,res,'auth/forgot','Lupa Password?',{smtpReady:smtpConfigured(),resetTTL:Math.max(5,Math.min(120,Number(process.env.PASSWORD_RESET_TTL_MINUTES)||30))}).catch(next));
 router.post('/forgot-password',resetLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
  try {
   if(!smtpConfigured()){flash(req,'danger','Pengiriman email belum tersedia. Hubungi pengelola untuk konfigurasi SMTP.');await save(req);return res.redirect(303,'/forgot-password');}
@@ -67,8 +68,8 @@ router.post('/forgot-password',resetLimiter,guestOnly,csrfGuard,async(req,res,ne
    const token=randomToken(), hash=tokenHash(token);
    // Per-account throttling, independent of client IP; never reveals account existence.
    const result=await query(`INSERT INTO password_resets(token_hash,user_id,expires_at,auth_version)
-    SELECT $1,$2,NOW()+INTERVAL '30 minutes',$3 WHERE NOT EXISTS
-    (SELECT 1 FROM password_resets WHERE user_id=$2 AND created_at>NOW()-INTERVAL '2 minutes') RETURNING token_hash`,[hash,user.id,user.auth_version]);
+    SELECT $1,$2,NOW()+($4::int * INTERVAL '1 minute'),$3 WHERE NOT EXISTS
+    (SELECT 1 FROM password_resets WHERE user_id=$2 AND created_at>NOW()-INTERVAL '2 minutes') RETURNING token_hash`,[hash,user.id,user.auth_version,Math.max(5,Math.min(120,Number(process.env.PASSWORD_RESET_TTL_MINUTES)||30))]);
    if(result.rowCount)try{await sendReset(user.email,token);}catch{await query('DELETE FROM password_resets WHERE token_hash=$1',[hash]);console.warn('password_reset_delivery_failed');}
   }
   flash(req,'success','Jika email terdaftar dan dapat menggunakan password, tautan pemulihan akan dikirim. Periksa kotak masuk dan spam.');await save(req);res.redirect(303,'/forgot-password');
