@@ -89,3 +89,17 @@ if (passwordConfirmation) {
   passwordInput.addEventListener('input', validatePasswords);
   passwordConfirmation.addEventListener('input', validatePasswords);
 }
+
+const activationToken = document.getElementById('activation-token');
+function processActivationLink(){
+ if(!activationToken)return;
+ const token=location.hash.slice(1);
+ if(/^[A-Za-z0-9_-]{43}$/.test(token)){
+  activationToken.value=token;
+  document.getElementById('activation-form').style.removeProperty('display');
+  document.getElementById('activation-status').textContent='Tautan ditemukan. Tekan tombol untuk mengaktifkan akun.';
+ }
+ history.replaceState(null,'',location.pathname);
+}
+processActivationLink();
+window.addEventListener('hashchange',processActivationLink);
