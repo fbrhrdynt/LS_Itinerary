@@ -1,0 +1,11 @@
+<%- include('../partials/head') %>
+<main class="auth-page-centered"><div class="auth-centered-shell">
+<header class="auth-centered-brand"><a class="brand wordmark" href="/login"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></a></header>
+<section class="auth-card-centered"><div class="auth-card-head"><h1>Kirim ulang aktivasi</h1><p class="muted">Tautan berlaku 15 menit. Periksa inbox dan spam.</p></div>
+<%- include('../partials/flash') %>
+<form method="post" action="/resend-activation" class="form-stack">
+<input type="hidden" name="csrf" value="<%= loginCSRF %>">
+<label>Email<input type="email" name="email" required maxlength="255" autocomplete="email"></label>
+<button type="submit" class="btn btn-primary">Kirim ulang email aktivasi</button>
+</form><p class="auth-switch"><a href="/login">Masuk</a> · <a href="/register">Daftar Akun</a></p>
+</section></div></main><%- include('../partials/footer') %>
