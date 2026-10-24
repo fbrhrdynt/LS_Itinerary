@@ -4,7 +4,7 @@ import { rateLimit } from 'express-rate-limit';
 import { pool, query } from '../database.js';
 import { flash, safeReturnTo } from '../utils.js';
 import { csrfGuard, sameOrigin, isAdmin, normalizeEmail, validEmail, validPassword, tokenHash } from '../services/authSecurity.js';
-import { smtpConfigured, sendReset } from '../services/mailer.js';
+import { smtpConfigured, sendReset, sendActivation } from '../services/mailer.js';
 import { guestOnly } from '../middleware.js';
 import { configured, startFlow, validFlow, exchangeCode, randomToken, safeEqual } from '../services/oidc.js';
 
@@ -13,7 +13,7 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHea
 const save = req => new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
 
 async function completeLogin(req, res, user) {
-  if (user.status !== 'active') throw new Error('Account unavailable');
+  if (user.status !== 'active' || user.activation_required) throw new Error('Account unavailable');
   if (!isAdmin(user)) user.role = 'User';
   const returnTo = req.session.returnTo;
   await new Promise((resolve, reject) => req.session.regenerate(err => err ? reject(err) : resolve()));
@@ -49,13 +49,63 @@ router.post('/register',authLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
    flash(req,'danger','Isi nama (2–120 karakter), email yang valid, dan password minimal 8 karakter (maksimal 72 byte).');
    await save(req); return res.redirect(303,'/register');
   }
+  if(!smtpConfigured()){flash(req,'danger','Aktivasi email belum tersedia. Hubungi pengelola.');await save(req);return res.redirect(303,'/register');}
   const hash=await bcrypt.hash(password,12);
-  await query("INSERT INTO users(name,email,password_hash,role,status) VALUES($1,$2,$3,'User','active')",[name,email,hash]);
-  flash(req,'success','Akun berhasil dibuat. Silakan masuk.'); await save(req); res.redirect(303,'/login');
+  const created=await query("INSERT INTO users(name,email,password_hash,role,status,activation_required) VALUES($1,$2,$3,'User','active',TRUE) RETURNING id,email",[name,email,hash]);
+  try { await issueActivation(created.rows[0]); }
+  catch(err){console.warn('activation_delivery_failed',err.code||err.name); }
+  flash(req,'success','Akun dibuat. Periksa email aktivasi (termasuk spam), atau gunakan Kirim Ulang Aktivasi. Anda belum dapat masuk sebelum aktivasi.');
+  await save(req); res.redirect(303,'/login');
  } catch(err) {
   if(err.code==='23505'){flash(req,'danger','Email sudah terdaftar. Silakan masuk atau gunakan Lupa Password.');await save(req);return res.redirect(303,'/register');} next(err);
  }
 });
+
+const activationLimiter=rateLimit({windowMs:15*60*1000,limit:5,standardHeaders:'draft-8',legacyHeaders:false,message:'Terlalu banyak permintaan. Coba lagi dalam 15 menit.'});
+async function issueActivation(user) {
+ const token=randomToken(), hash=tokenHash(token);
+ const inserted=await query(`INSERT INTO email_activations(token_hash,user_id,expires_at)
+ SELECT $1,$2,NOW()+INTERVAL '15 minutes'
+ WHERE NOT EXISTS (SELECT 1 FROM email_activations WHERE user_id=$2 AND created_at>NOW()-INTERVAL '2 minutes')
+ RETURNING token_hash`,[hash,user.id]);
+ if(!inserted.rowCount)return;
+ try { await sendActivation(user.email,token); }
+ catch(err){await query('DELETE FROM email_activations WHERE token_hash=$1',[hash]);throw err;}
+}
+router.get('/resend-activation',guestOnly,(req,res,next)=>formPage(req,res,'auth/resend','Kirim Ulang Aktivasi').catch(next));
+router.post('/resend-activation',activationLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
+ try {
+  const email=normalizeEmail(req.body.email);
+  if(validEmail(email)&&smtpConfigured()){
+   const user=(await query("SELECT id,email FROM users WHERE lower(trim(email))=$1 AND activation_required=TRUE AND status='active'",[email])).rows[0];
+   if(user)try{await issueActivation(user);}catch(err){console.warn('activation_delivery_failed',err.code||err.name);}
+  }
+  flash(req,'success','Jika akun memerlukan aktivasi, tautan baru akan dikirim. Periksa inbox dan spam.');
+  await save(req);res.redirect(303,'/resend-activation');
+ }catch(err){next(err);}
+});
+router.get('/verify-email',guestOnly,(req,res,next)=>{
+ res.set('Referrer-Policy','no-referrer');
+ return formPage(req,res,'auth/verify','Aktivasi Email').catch(next);
+});
+router.post('/verify-email',activationLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
+ const token=typeof req.body.token==='string'?req.body.token:'';
+ if(!/^[A-Za-z0-9_-]{43}$/.test(token)){flash(req,'danger','Tautan aktivasi tidak valid atau kedaluwarsa.');await save(req);return res.redirect(303,'/resend-activation');}
+ const client=await pool.connect();
+ try {
+  await client.query('BEGIN');
+  const found=await client.query(`SELECT u.id FROM users u JOIN email_activations a ON a.user_id=u.id
+   WHERE a.token_hash=$1 AND a.used_at IS NULL AND a.expires_at>NOW() AND u.activation_required=TRUE
+   AND u.status='active' FOR UPDATE OF u,a`,[tokenHash(token)]);
+  if(!found.rowCount){await client.query('ROLLBACK');flash(req,'danger','Tautan aktivasi tidak valid atau kedaluwarsa.');await save(req);return res.redirect(303,'/resend-activation');}
+  const id=found.rows[0].id;
+  await client.query("UPDATE users SET activation_required=FALSE,email_verified_at=NOW(),verified_email=email,updated_at=NOW() WHERE id=$1",[id]);
+  await client.query('UPDATE email_activations SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[id]);
+  await client.query('COMMIT');
+  flash(req,'success','Email berhasil diaktifkan. Silakan masuk.');await save(req);res.redirect(303,'/login');
+ }catch(err){await client.query('ROLLBACK');next(err);}finally{client.release();}
+});
+
 const resetLimiter=rateLimit({windowMs:30*60*1000,limit:5,standardHeaders:'draft-8',legacyHeaders:false,message:'Terlalu banyak permintaan. Coba lagi dalam 30 menit.'});
 router.get('/forgot-password',guestOnly,(req,res,next)=>formPage(req,res,'auth/forgot','Lupa Password?',{smtpReady:smtpConfigured(),resetTTL:Math.max(5,Math.min(120,Number(process.env.PASSWORD_RESET_TTL_MINUTES)||30))}).catch(next));
 router.post('/forgot-password',resetLimiter,guestOnly,csrfGuard,async(req,res,next)=>{
@@ -88,7 +138,7 @@ router.post('/reset-password',authLimiter,guestOnly,csrfGuard,async(req,res,next
    WHERE r.token_hash=$1 AND r.used_at IS NULL AND r.expires_at>NOW() AND r.auth_version=u.auth_version AND u.status='active' FOR UPDATE OF u,r`,[tokenHash(token)]);
   if(!found.rowCount){await client.query('ROLLBACK');flash(req,'danger','Tautan tidak valid atau kedaluwarsa. Minta tautan baru.');await save(req);return res.redirect(303,'/forgot-password');}
   const id=found.rows[0].id;
-  await client.query('UPDATE users SET password_hash=$1,email_verified_at=NOW(),verified_email=email,updated_at=NOW() WHERE id=$2',[hash,id]);
+  await client.query('UPDATE users SET password_hash=$1,updated_at=NOW() WHERE id=$2',[hash,id]);
   await client.query('UPDATE password_resets SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[id]);
   await client.query(`DELETE FROM session WHERE sess->'user'->>'id'=$1`,[String(id)]);
   await client.query('COMMIT');
@@ -99,6 +149,7 @@ router.post('/reset-password',authLimiter,guestOnly,csrfGuard,async(req,res,next
 router.post('/login',authLimiter,guestOnly,csrfGuard,async(req,res,next)=>{try{
  const user=(await query('SELECT * FROM users WHERE LOWER(email)=$1',[String(req.body.email||'').trim().toLowerCase()])).rows[0];
  if(!user||user.status!=='active'||!user.password_hash||!await bcrypt.compare(String(req.body.password||''),user.password_hash)){flash(req,'danger','Email atau password tidak valid.');await save(req);return res.redirect('/login');}
+ if(user.activation_required){flash(req,'danger','Aktifkan email terlebih dahulu. <a href="/resend-activation">Kirim ulang aktivasi</a>.');await save(req);return res.redirect(303,'/login');}
  await completeLogin(req,res,user);
 }catch(e){next(e);}});
 
@@ -133,12 +184,12 @@ router.get('/auth/febro/callback', authLimiter, guestOnly, async (req, res, next
       const linked = result.rows.find(row => row.febro_sub === identity.sub);
       const existing = result.rows.find(row => row.email.toLowerCase() === identity.email);
       if (linked) {
-        if (linked.status !== 'active') throw new Error('Account unavailable');
+        if (linked.status !== 'active' || linked.activation_required) throw new Error('Account unavailable');
         user = linked;
         if (normalizeEmail(linked.email) === identity.email) user = (await client.query('UPDATE users SET email_verified_at=NOW(),verified_email=email WHERE id=$1 RETURNING *',[linked.id])).rows[0];
         else user = (await client.query("UPDATE users SET role='User',email_verified_at=NULL,verified_email=NULL WHERE id=$1 RETURNING *",[linked.id])).rows[0];
       } else if (existing) {
-        if (existing.status !== 'active' || existing.febro_sub) throw new Error('Account unavailable');
+        if (existing.status !== 'active' || existing.febro_sub || existing.activation_required) throw new Error('Account unavailable');
         req.session.pendingIdentity = { ...identity, userId: existing.id, csrf: randomToken(), expires: Date.now() + 600000 };
       } else {
         user = (await client.query(`INSERT INTO users(name,email,password_hash,febro_sub,role,status,email_verified_at,verified_email)
@@ -169,7 +220,7 @@ router.post('/auth/link', authLimiter, guestOnly, async (req, res, next) => {
     if (!pending || pending.expires <= Date.now() || !sameOrigin(req) || !safeEqual(req.body.csrf, pending.csrf)) return res.redirect('/login');
     const result = await query('SELECT * FROM users WHERE id=$1', [pending.userId]);
     const user = result.rows[0];
-    if (!user || user.status !== 'active' || user.email.toLowerCase() !== pending.email || !user.password_hash
+    if (!user || user.status !== 'active' || user.activation_required || user.email.toLowerCase() !== pending.email || !user.password_hash
       || !(await bcrypt.compare(String(req.body.password || ''), user.password_hash))) {
       flash(req, 'danger', 'Password akun lama tidak cocok atau akun tidak aktif. Coba lagi atau hubungi Administrator.');
       await save(req);
