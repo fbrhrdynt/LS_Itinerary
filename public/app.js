@@ -93,7 +93,7 @@ if (passwordConfirmation) {
 const activationToken = document.getElementById('activation-token');
 function processActivationLink(){
  if(!activationToken)return;
- const token=location.hash.slice(1);
+ const token=location.hash.slice(1) || new URLSearchParams(location.search).get('token') || activationToken.value;
  if(/^[A-Za-z0-9_-]{43}$/.test(token)){
   activationToken.value=token;
   document.getElementById('activation-form').style.removeProperty('display');
