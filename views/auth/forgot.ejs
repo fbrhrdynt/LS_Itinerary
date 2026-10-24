@@ -3,7 +3,7 @@
 <header class="auth-centered-brand"><a class="brand wordmark" href="/login"><span class="wordmark-title">Itinerary</span><small>by Febro Herdyanto</small></a></header>
 <section class="auth-card-centered"><div class="auth-card-head"><h1>Lupa Password?</h1></div>
 <%- include('../partials/flash') %>
-<p>Masukkan email akun Anda untuk menerima tautan pemulihan yang berlaku 30 menit.</p>
+<p>Masukkan email akun Anda untuk menerima tautan pemulihan yang berlaku <%= resetTTL %> menit.</p>
 <% if (!smtpReady) { %><p role="alert">Pengiriman email belum tersedia. Hubungi pengelola untuk konfigurasi SMTP.</p><% } %>
 <form method="post" action="/forgot-password" class="form-stack"><input type="hidden" name="csrf" value="<%= loginCSRF %>">
 <label>Email<input type="email" name="email" required autocomplete="email" maxlength="255"></label>
